@@ -1,0 +1,10 @@
+@echo off
+del stdafx.obj
+del MyDLL.pch
+del dllmain.exp
+del dllmain.lib
+del dllmain.obj
+del MyDLL.obj
+del MyDLL.dll
+del MyDLL.lib
+del MyDLL.exp
