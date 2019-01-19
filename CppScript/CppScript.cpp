@@ -190,20 +190,27 @@ std::string CppScript::getWorkingDir()
 
 }
 
-void CppScript::setWorkingDir(const std::string& sDir)
+bool CppScript::setWorkingDir(const std::string& sDir)
 {
 	std::string _dir = sDir;
 
 	if (_dir.size() == 0)
 	{
-		_dir = ".";
-		return;
+		return false;
 	}
 	char cEnd = _dir[strlen(_dir.c_str()) - 1];
 	if (cEnd == '\\' || cEnd == '/')
 		_dir[strlen(_dir.c_str()) - 1] = '\0';
 
-	m_workingDir = _dir.c_str();
+	//test dir is valid
+	std::string sOldDir = Communal::GetWorkingDir();
+	if (Communal::SetWorkingDir(_dir.c_str()))
+	{
+		Communal::SetWorkingDir(sOldDir.c_str());
+		m_workingDir = _dir.c_str();
+		return true;
+	}
+	return false;
 }
 
 void CppScript::clean()

@@ -33,7 +33,7 @@ public:
 	///设置工作目录
 	// 默认为当前目录
 	std::string getWorkingDir();
-	void setWorkingDir(const std::string& sDir);
+	bool setWorkingDir(const std::string& sDir);
 
 	///设置compiler的路径，既cl.exe的文件路径
 	// 如果为相对路径，则相对于WorkingDir
