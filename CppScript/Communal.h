@@ -21,5 +21,10 @@ public:
 	static bool DelFile(const char* pFilePath);
 	static bool IsPathExist(const char* path);
 	static bool GetExportNames(const char* dllPath, std::vector<std::string>& outExportNames);
+	static bool CpyFile(const char* srcPath, const char* dstPath);
+	static bool CpyFloder(const char* srcDir, const char* dstDir);
+	static bool Rename(const char* srcFileName, const char* dstFileName);
+	static std::string GetDirFromPath(std::string path);
+	static bool DelFloder(const char* dir);
 };
 

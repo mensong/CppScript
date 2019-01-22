@@ -10,36 +10,32 @@ int extFoo(int n)
 
 void main()
 {
-	char path[MAX_PATH] = { 0 };
-	GetCurrentDirectoryA(MAX_PATH, path);
-	std::string sCurDir = path;
-
 	CppScript cs;
-	cs.setWorkingDir(sCurDir + "\\..\\..\\tmp");
+	cs.setWorkingDir("..\\..\\tmp");
 
-	cs.addIncDir(sCurDir + "\\..\\..\\cl\\include\\SDK");
-	cs.addIncDir(sCurDir + "\\..\\..\\cl\\include\\VC10");
+	cs.addIncDir("..\\cl\\include\\SDK");
+	cs.addIncDir("..\\cl\\include\\VC10");
 
 #ifdef _WIN64
-	cs.setCompilePath(sCurDir + "\\..\\..\\cl\\x86_amd64\\cl.exe");
-	cs.setLinkPath(sCurDir + "\\..\\..\\cl\\x86_amd64\\link.exe");
+	cs.setCompilePath("..\\cl\\x86_amd64\\cl.exe");
+	cs.setLinkPath("..\\cl\\x86_amd64\\link.exe");
 
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x64\\VC10\\LIBCMT.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x64\\VC10\\OLDNAMES.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x64\\VC10\\libcpmt.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x64\\SDK\\kernel32.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x64\\SDK\\uuid.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x64\\SDK\\User32.lib");
+	cs.addLibrary("..\\cl\\lib\\x64\\VC10\\LIBCMT.lib");
+	cs.addLibrary("..\\cl\\lib\\x64\\VC10\\OLDNAMES.lib");
+	cs.addLibrary("..\\cl\\lib\\x64\\VC10\\libcpmt.lib");
+	cs.addLibrary("..\\cl\\lib\\x64\\SDK\\kernel32.lib");
+	cs.addLibrary("..\\cl\\lib\\x64\\SDK\\uuid.lib");
+	cs.addLibrary("..\\cl\\lib\\x64\\SDK\\User32.lib");
 #else
-	cs.setCompilePath(sCurDir + "\\..\\..\\cl\\cl.exe");
-	cs.setLinkPath(sCurDir + "\\..\\..\\cl\\link.exe");
+	cs.setCompilePath("..\\cl\\cl.exe");
+	cs.setLinkPath("..\\cl\\link.exe");
 
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x86\\VC10\\LIBCMT.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x86\\VC10\\OLDNAMES.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x86\\VC10\\libcpmt.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x86\\SDK\\kernel32.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x86\\SDK\\uuid.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x86\\SDK\\User32.lib");
+	cs.addLibrary("..\\cl\\lib\\x86\\VC10\\LIBCMT.lib");
+	cs.addLibrary("..\\cl\\lib\\x86\\VC10\\OLDNAMES.lib");
+	cs.addLibrary("..\\cl\\lib\\x86\\VC10\\libcpmt.lib");
+	cs.addLibrary("..\\cl\\lib\\x86\\SDK\\kernel32.lib");
+	cs.addLibrary("..\\cl\\lib\\x86\\SDK\\uuid.lib");
+	cs.addLibrary("..\\cl\\lib\\x86\\SDK\\User32.lib");
 #endif
 	
 	std::string sResult;
@@ -71,7 +67,7 @@ void main()
 		for (int i = 0; i < vctNames.size(); ++i)
 		{
 			void* p = ct.getAddress(vctNames[i]);
-			printf("%s:%llu\n", vctNames[i].c_str(), p);
+			printf("%s:%llu\n", vctNames[i].c_str(), (unsigned long long)p);
 			assert(p);
 		}
 
@@ -99,4 +95,9 @@ void main()
 	printf("==================%s===============\n", "CLEAN");
 	//清理临时文件
 	cs.clean();
+
+
+	//CppScriptPack pack(&cs);
+	//pack.init("G:\\test");
+	//pack.testIncludes();
 }

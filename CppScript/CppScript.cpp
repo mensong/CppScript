@@ -53,7 +53,7 @@ std::string CppScript::getLinkOption()
 
 bool CppScript::compile(const std::string& sScript, std::string* result /*= NULL*/)
 {
-	_WorkingDirMan _auto_dir(this);
+	WorkingDirScope _auto_dir(this);
 
 	++m_compileCount;
 
@@ -64,7 +64,12 @@ bool CppScript::compile(const std::string& sScript, std::string* result /*= NULL
 
 	unsigned long exitCode = 0;
 	std::string sResult;
-	std::string sOption = "/nologo /c /EHsc " + sCPath + " " + getIncDirs();
+	std::string sOption = "/nologo /c /EHsc ";
+	sOption += sCPath.c_str();
+	sOption += " ";
+	sOption += getCompileOption().c_str();
+	sOption += " ";
+	sOption += getIncDirsCmdLine().c_str();
 	if (!Communal::Execute(m_CompilePath.c_str(), sOption.c_str(), exitCode, sResult))
 		return false;
 	if (result)
@@ -106,10 +111,12 @@ bool CppScript::compileInClosure(const std::string& sScript, std::string* result
 
 bool CppScript::link(std::string* result /*= NULL*/)
 {
-	_WorkingDirMan _auto_dir(this);
+	WorkingDirScope _auto_dir(this);
 
 	std::string sObjPath = _getObjFileCmdLine(m_vctTmpCompiledNames);
-	std::string sOut = "/OUT:\"" + _getOutFile() + "\"";
+	std::string sOut = "/OUT:\"";
+	sOut += _getOutFile().c_str();
+	sOut += "\"";
 
 	std::string sMachine =
 #ifdef _WIN64
@@ -121,7 +128,16 @@ bool CppScript::link(std::string* result /*= NULL*/)
 
 	unsigned long exitCode = 0;
 	std::string sResult;
-	std::string sOption = "/nologo /DLL " + sMachine + ' ' + sOut + ' ' + sObjPath + ' ' + getLibrarys();
+	std::string sOption = "/nologo /DLL ";
+	sOption += sMachine.c_str();
+	sOption += ' ';
+	sOption += getLinkOption().c_str();
+	sOption += ' ';
+	sOption += sOut.c_str();
+	sOption += ' ';
+	sOption += sObjPath.c_str();
+	sOption += ' ';
+	sOption += getLibrariesCmdLine();
 	if (!Communal::Execute(m_LinkPath.c_str(), sOption.c_str(), exitCode, sResult))
 		return false;
 	if (result)
@@ -134,7 +150,7 @@ bool CppScript::link(std::string* result /*= NULL*/)
 
 CppScript::Context CppScript::eval()
 {
-	_WorkingDirMan _auto_dir(this);
+	WorkingDirScope _auto_dir(this);
 	return CppScript::Context(Communal::LoadLib(_getOutFile().c_str()));
 }
 
@@ -149,12 +165,22 @@ void CppScript::addIncDir(const std::string& sDir)
 	m_vctIncDirs.push_back(_sDir);
 }
 
+std::vector<std::string> CppScript::getIncDirs()
+{
+	return m_vctIncDirs;
+}
+
 void CppScript::addLibrary(const std::string& sLibPath)
 {
 	m_vctLibs.push_back(sLibPath);
 }
 
-std::string CppScript::getIncDirs()
+std::vector<std::string> CppScript::getLibraries()
+{
+	return m_vctLibs;
+}
+
+std::string CppScript::getIncDirsCmdLine()
 {
 	std::string sIncDirs;
 	for (int i = 0; i < (int)m_vctIncDirs.size(); ++i)
@@ -170,7 +196,7 @@ std::string CppScript::getIncDirs()
 	return sIncDirs;
 }
 
-std::string CppScript::getLibrarys()
+std::string CppScript::getLibrariesCmdLine()
 {
 	std::string sLibs;
 	for (int i = 0; i < (int)m_vctLibs.size(); ++i)
@@ -221,7 +247,7 @@ bool CppScript::setWorkingDir(const std::string& sDir)
 
 void CppScript::clean()
 {
-	_WorkingDirMan _auto_dir(this);
+	WorkingDirScope _auto_dir(this);
 
 	std::string sTempName = _getMainTempName();
 	std::string sWorkinDir = getWorkingDir() ;
@@ -343,13 +369,19 @@ std::string CppScript::_getOutFile()
 }
 
 
-CppScript::_WorkingDirMan::_WorkingDirMan(CppScript* THIS)
+CppScript::WorkingDirScope::WorkingDirScope(CppScript* THIS)
 {
 	m_sOriginalDir = Communal::GetWorkingDir();
 	Communal::SetWorkingDir(THIS->getWorkingDir().c_str());
 }
 
-CppScript::_WorkingDirMan::~_WorkingDirMan()
+CppScript::WorkingDirScope::WorkingDirScope(const char* dirSwitchTo)
+{
+	m_sOriginalDir = Communal::GetWorkingDir();
+	Communal::SetWorkingDir(dirSwitchTo);
+}
+
+CppScript::WorkingDirScope::~WorkingDirScope()
 {
 
 }

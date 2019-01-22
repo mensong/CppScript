@@ -29,6 +29,15 @@ public:
 		std::string m_name;
 	};
 
+	class WorkingDirScope
+	{
+	public:
+		WorkingDirScope(CppScript* THIS);
+		WorkingDirScope(const char* dirSwitchTo);
+		~WorkingDirScope();
+		std::string m_sOriginalDir;
+	};
+
 public:
 	CppScript();
 	~CppScript();
@@ -61,12 +70,18 @@ public:
 	///添加包含目录
 	// 如果为相对路径，则相对于WorkingDir
 	void addIncDir(const std::string& sDir);
-	std::string getIncDirs();
+	///
+	std::vector<std::string> getIncDirs();
+	///返回include dirs的命令行
+	std::string getIncDirsCmdLine();
 
 	///添加lib文件
 	// 如果为相对路径，则相对于WorkingDir
 	void addLibrary(const std::string& sLibPath);
-	std::string getLibrarys();
+	///
+	std::vector<std::string> getLibraries();
+	///返回libraries的命令行
+	std::string getLibrariesCmdLine();
 
 	///compile
 	// sScript不能为不闭合的代码
@@ -85,15 +100,6 @@ public:
 
 	///清楚临时文件
 	void clean();
-
-protected:
-	class _WorkingDirMan
-	{
-	public:
-		_WorkingDirMan(CppScript* THIS);
-		~_WorkingDirMan();
-		std::string m_sOriginalDir;
-	};
 		
 protected:
 	std::string _getMainTempName();//临时名字，为this的字符串
@@ -106,8 +112,8 @@ protected:
 
 private:
 	std::string m_CompilePath;
-	std::string m_LinkPath;
 	std::string m_CompileOption;
+	std::string m_LinkPath;	
 	std::string m_LinkOption;
 	std::vector<std::string> m_vctIncDirs;
 	std::vector<std::string> m_vctLibs;
