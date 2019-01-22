@@ -1,6 +1,7 @@
 #include "CppScript.h"
 #include <windows.h>
 #include "Communal.h"
+#include <assert.h>
 
 int extFoo(int n)
 {
@@ -64,7 +65,16 @@ void main()
 	printf("==================%s===============\n", "USE");
 	{//使用
 		CppScript::Context ct = cs.eval();
-		
+
+		std::vector<std::string> vctNames;
+		ct.getNames(vctNames);
+		for (int i = 0; i < vctNames.size(); ++i)
+		{
+			void* p = ct.getAddress(vctNames[i]);
+			printf("%s:%llu\n", vctNames[i].c_str(), p);
+			assert(p);
+		}
+
 		//取script的数据
 		int* pMyData = (int *)ct.getAddress("myData");
 		DWORD err = GetLastError();

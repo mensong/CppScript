@@ -2,3 +2,9 @@
 /CppScript.VC.db
 /CppScript/Win32/Debug
 /*.opendb
+/CppScript/Win32/Release
+/CppScript/x64/Debug
+/CppScript/x64/Release
+/Win32/Release
+/x64/Debug
+/x64/Release

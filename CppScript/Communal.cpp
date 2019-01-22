@@ -1,6 +1,7 @@
 #include "Communal.h"
 #include <malloc.h>
 #include <windows.h>
+#include <io.h>
 
 bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& exitCode, std::string& sPrintText)
 {
@@ -336,4 +337,84 @@ void Communal::ListFilesA(const char * lpPath, std::vector<std::string>& vctDir,
 bool Communal::DelFile(const char* pFilePath)
 {
 	return (DeleteFileA(pFilePath) == TRUE);
+}
+
+bool Communal::IsPathExist(const char* path)
+{
+	int nRet = _access(path, 0);
+	return 0 == nRet || EACCES == nRet;
+}
+
+bool Communal::GetExportNames(const char* dllPath, std::vector<std::string>& outExportNames)
+{
+	HANDLE hFile, hFileMap;//文件句柄和内存映射文件句柄
+	DWORD fileAttrib = 0;//存储文件属性用，在createfile中用到。
+	void* mod_base;//内存映射文件的起始地址，也是模块的起始地址
+	typedef PVOID(CALLBACK* PFNEXPORTFUNC)(PIMAGE_NT_HEADERS, PVOID, ULONG, PIMAGE_SECTION_HEADER*);
+	//首先取得ImageRvaToVa函数本来只要#include <Dbghelp.h>就可以使用这个函数，但是可能没有这个头文件
+	PFNEXPORTFUNC ImageRvaToVax = NULL;
+	HMODULE hModule = ::LoadLibraryA("DbgHelp.dll");
+	if (hModule != NULL)
+	{
+		ImageRvaToVax = (PFNEXPORTFUNC)::GetProcAddress(hModule, "ImageRvaToVa");
+		if (ImageRvaToVax == NULL)
+		{
+			::FreeLibrary(hModule);
+			return false;
+		}
+	}
+	else
+	{
+		return false;
+	}
+
+	if (!IsPathExist(dllPath))
+	{//返回值为NULL，则文件不存在，退出
+		::FreeLibrary(hModule);
+		return false;
+	}
+
+	hFile = CreateFileA(dllPath, GENERIC_READ, 0, 0, OPEN_EXISTING, fileAttrib, 0);
+	if (hFile == INVALID_HANDLE_VALUE)
+	{
+		::FreeLibrary(hModule);
+		return false;
+	}
+	hFileMap = CreateFileMapping(hFile, 0, PAGE_READONLY, 0, 0, 0);
+	if (hFileMap == NULL)
+	{
+		CloseHandle(hFile);
+		::FreeLibrary(hModule);
+		return false;
+	}
+	mod_base = MapViewOfFile(hFileMap, FILE_MAP_READ, 0, 0, 0);
+	if (mod_base == NULL)
+	{
+		CloseHandle(hFileMap);
+		CloseHandle(hFile);
+		::FreeLibrary(hModule);
+		return false;
+	}
+	IMAGE_DOS_HEADER* pDosHeader = (IMAGE_DOS_HEADER*)mod_base;
+	IMAGE_NT_HEADERS * pNtHeader =
+		(IMAGE_NT_HEADERS *)((BYTE*)mod_base + pDosHeader->e_lfanew);//得到NT头首址
+	IMAGE_OPTIONAL_HEADER * pOptHeader =
+		(IMAGE_OPTIONAL_HEADER *)((BYTE*)mod_base + pDosHeader->e_lfanew + 24);//optional头首址
+	IMAGE_EXPORT_DIRECTORY* pExportDesc = (IMAGE_EXPORT_DIRECTORY*)
+		ImageRvaToVax(pNtHeader, mod_base, pOptHeader->DataDirectory[0].VirtualAddress, 0);
+	//导出表首址。函数名称表首地址每个DWORD代表一个函数名字字符串的地址
+	PDWORD nameAddr = (PDWORD)ImageRvaToVax(pNtHeader, mod_base, pExportDesc->AddressOfNames, 0);
+	char* func_name = (char*)ImageRvaToVax(pNtHeader, mod_base, (DWORD)nameAddr[0], 0);
+	DWORD i = 0;
+	DWORD unti = pExportDesc->NumberOfNames;
+	for (i = 0; i < unti; i++)
+	{
+		outExportNames.push_back(func_name);
+		func_name = (char*)ImageRvaToVax(pNtHeader, mod_base, (DWORD)nameAddr[i], 0);
+	}
+	::FreeLibrary(hModule);
+	CloseHandle(hFileMap);
+	CloseHandle(hFile);
+
+	return true;
 }

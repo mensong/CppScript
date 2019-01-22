@@ -19,5 +19,7 @@ public:
 	static void ListFilesA(const char * lpPath, std::vector<std::string>& vctDir, std::vector<std::string>& vctFiles,
 		const char * filter, bool bSubDir, bool bAppendPath);
 	static bool DelFile(const char* pFilePath);
+	static bool IsPathExist(const char* path);
+	static bool GetExportNames(const char* dllPath, std::vector<std::string>& outExportNames);
 };
 

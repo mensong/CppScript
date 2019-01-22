@@ -17,6 +17,9 @@ public:
 		///获得导出的地址
 		void* getAddress(const std::string& name);
 
+		///获得所有导出的名称
+		bool getNames(std::vector<std::string>& outNames);
+
 	protected:
 		void _deRef();
 

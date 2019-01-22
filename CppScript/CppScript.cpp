@@ -370,6 +370,14 @@ void* CppScript::Context::getAddress(const std::string& name)
 	return Communal::GetAddressByExportName(m_hMod, name.c_str());
 }
 
+bool CppScript::Context::getNames(std::vector<std::string>& outNames)
+{
+	if (!m_hMod)
+		return false;
+
+	return Communal::GetExportNames(Communal::GetModulePath(m_hMod).c_str(), outNames);
+}
+
 void CppScript::Context::_deRef()
 {
 	if (m_pRefCount)
