@@ -45,9 +45,9 @@ void main()
 	std::string sResult;
 	std::string sCpp = Communal::ReadText("..\\..\\test.cpp");
 	printf("==================%s===============\n", "COMPILE");
-	int res = cs.compile(sCpp, &sResult);
+	bool res = cs.compile(sCpp, &sResult);
 	printf(sResult.c_str());
-	if (res != 259)//cl成功则返回259，这个为什么我也不知道
+	if (!res)
 	{
 		cs.clean();
 		return;
@@ -56,7 +56,7 @@ void main()
 	printf("==================%s===============\n", "LINK");
 	res = cs.link(&sResult);
 	printf(sResult.c_str());
-	if (res != 259)//link成功则返回259，这个为什么我也不知道
+	if (!res)//259可能是GetLastError中的错误码：没有可用的数据了，既所有的都已经做完，没有可用的数据可以操作了，所以返回（我猜的）
 	{
 		cs.clean();
 		return;

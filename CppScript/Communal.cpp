@@ -413,6 +413,7 @@ bool Communal::GetExportNames(const char* dllPath, std::vector<std::string>& out
 		func_name = (char*)ImageRvaToVax(pNtHeader, mod_base, (DWORD)nameAddr[i], 0);
 	}
 	::FreeLibrary(hModule);
+	UnmapViewOfFile(mod_base);
 	CloseHandle(hFileMap);
 	CloseHandle(hFile);
 

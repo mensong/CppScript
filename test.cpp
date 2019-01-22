@@ -54,5 +54,6 @@ BOOL MyEntry(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 	default:
 		break;
 	}
+	
 	return TRUE;
 }

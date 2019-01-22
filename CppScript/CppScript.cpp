@@ -51,7 +51,7 @@ std::string CppScript::getLinkOption()
 }
 
 
-int CppScript::compile(const std::string& sScript, std::string* result /*= NULL*/)
+bool CppScript::compile(const std::string& sScript, std::string* result /*= NULL*/)
 {
 	_WorkingDirMan _auto_dir(this);
 
@@ -66,13 +66,16 @@ int CppScript::compile(const std::string& sScript, std::string* result /*= NULL*
 	std::string sResult;
 	std::string sOption = "/nologo /c /EHsc " + sCPath + " " + getIncDirs();
 	if (!Communal::Execute(m_CompilePath.c_str(), sOption.c_str(), exitCode, sResult))
-		return -1;
+		return false;
 	if (result)
 		*result = sResult;
-	return exitCode;
+	
+	std::string sResultFile = _getCurTempFileName().c_str();
+	sResultFile += ".obj";
+	return Communal::IsPathExist(sResultFile.c_str());
 }
 
-int CppScript::compileInClosure(const std::string& sScript, std::string* result /*= NULL*/,
+bool CppScript::compileInClosure(const std::string& sScript, std::string* result /*= NULL*/,
 	const std::vector<std::string>* vctIncludedFiles /*= NULL*/)
 {
 	std::string sCppCode;
@@ -101,7 +104,7 @@ int CppScript::compileInClosure(const std::string& sScript, std::string* result 
 	return compile(sCppCode, result);
 }
 
-int CppScript::link(std::string* result /*= NULL*/)
+bool CppScript::link(std::string* result /*= NULL*/)
 {
 	_WorkingDirMan _auto_dir(this);
 
@@ -120,10 +123,13 @@ int CppScript::link(std::string* result /*= NULL*/)
 	std::string sResult;
 	std::string sOption = "/nologo /DLL " + sMachine + ' ' + sOut + ' ' + sObjPath + ' ' + getLibrarys();
 	if (!Communal::Execute(m_LinkPath.c_str(), sOption.c_str(), exitCode, sResult))
-		return -1;
+		return false;
 	if (result)
 		*result = sResult;
-	return exitCode;
+
+	std::string sResultFile = _getCurTempFileName().c_str();
+	sResultFile += ".dll";	
+	return Communal::IsPathExist(sResultFile.c_str());
 }
 
 CppScript::Context CppScript::eval()
@@ -137,7 +143,7 @@ void CppScript::addIncDir(const std::string& sDir)
 	if (sDir.size() == 0)
 		return;
 	std::string _sDir = sDir;
-	int nLen = strlen(_sDir.c_str());
+	int nLen = (int)strlen(_sDir.c_str());
 	if (_sDir[nLen - 1] == '\\')
 		_sDir[nLen - 1] = '\0';
 	m_vctIncDirs.push_back(_sDir);

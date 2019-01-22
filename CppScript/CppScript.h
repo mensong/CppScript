@@ -70,15 +70,15 @@ public:
 
 	///compile
 	// sScript不能为不闭合的代码
-	int compile(const std::string& sScript, std::string* result = NULL);
+	bool compile(const std::string& sScript, std::string* result = NULL);
 
 	///compile in closure
 	// sScript可以为不闭合的代码，如:int n = 0; ++n;
-	int compileInClosure(const std::string& sScript, std::string* result = NULL, 
+	bool compileInClosure(const std::string& sScript, std::string* result = NULL, 
 		const std::vector<std::string>* vctIncludedFiles = NULL);
 
 	///link以上compiled的内容
-	int link(std::string* result = NULL);
+	bool link(std::string* result = NULL);
 
 	///加载并运行linked的代码
 	CppScript::Context eval();
