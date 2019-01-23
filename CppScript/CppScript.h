@@ -14,6 +14,9 @@ public:
 		Context(const Context& o);
 		Context& operator=(const Context& o);
 		
+		///是否有效
+		bool isValid();
+
 		///获得导出的地址
 		void* getAddress(const std::string& name);
 
@@ -32,7 +35,7 @@ public:
 	class WorkingDirScope
 	{
 	public:
-		WorkingDirScope(CppScript* THIS);
+		WorkingDirScope(CppScript* cs);
 		WorkingDirScope(const char* dirSwitchTo);
 		~WorkingDirScope();
 		std::string m_sOriginalDir;

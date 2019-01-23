@@ -233,7 +233,8 @@ std::string Communal::ReadText(const char * path)
 std::string Communal::GetWorkingDir()
 {
 	char path[MAX_PATH] = { 0 };
-	GetCurrentDirectoryA(MAX_PATH, path);
+	if (0 == GetCurrentDirectoryA(MAX_PATH, path))
+		return ".";
 	return path;
 }
 
@@ -338,7 +339,9 @@ void Communal::ListFilesA(const char * lpPath, std::vector<std::string>& vctDir,
 
 bool Communal::DelFile(const char* pFilePath)
 {
-	return (DeleteFileA(pFilePath) == TRUE);
+	BOOL b = DeleteFileA(pFilePath);
+	DWORD err = GetLastError();
+	return (b == TRUE);
 }
 
 bool Communal::IsPathExist(const char* path)

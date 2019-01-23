@@ -70,6 +70,7 @@ bool CppScript::compile(const std::string& sScript, std::string* result /*= NULL
 	sOption += getCompileOption().c_str();
 	sOption += " ";
 	sOption += getIncDirsCmdLine().c_str();
+
 	if (!Communal::Execute(m_CompilePath.c_str(), sOption.c_str(), exitCode, sResult))
 		return false;
 	if (result)
@@ -138,6 +139,7 @@ bool CppScript::link(std::string* result /*= NULL*/)
 	sOption += sObjPath.c_str();
 	sOption += ' ';
 	sOption += getLibrariesCmdLine();
+	
 	if (!Communal::Execute(m_LinkPath.c_str(), sOption.c_str(), exitCode, sResult))
 		return false;
 	if (result)
@@ -250,13 +252,12 @@ void CppScript::clean()
 	WorkingDirScope _auto_dir(this);
 
 	std::string sTempName = _getMainTempName();
-	std::string sWorkinDir = getWorkingDir() ;
 
 	for (int i = 1; i <= m_compileCount; ++i)
 	{
 		std::vector<std::string> vctDirs;
 		std::vector<std::string> vctFiles;
-		Communal::ListFilesA(sWorkinDir.c_str(), vctDirs, vctFiles, 
+		Communal::ListFilesA(".", vctDirs, vctFiles, 
 			(sTempName + '-' + std::to_string(i) + ".*").c_str(), false, true);
 		for (int i = 0; i < (int)vctFiles.size(); ++i)
 		{
@@ -369,10 +370,10 @@ std::string CppScript::_getOutFile()
 }
 
 
-CppScript::WorkingDirScope::WorkingDirScope(CppScript* THIS)
+CppScript::WorkingDirScope::WorkingDirScope(CppScript* cs)
 {
 	m_sOriginalDir = Communal::GetWorkingDir();
-	Communal::SetWorkingDir(THIS->getWorkingDir().c_str());
+	Communal::SetWorkingDir(cs->getWorkingDir().c_str());
 }
 
 CppScript::WorkingDirScope::WorkingDirScope(const char* dirSwitchTo)
@@ -383,7 +384,7 @@ CppScript::WorkingDirScope::WorkingDirScope(const char* dirSwitchTo)
 
 CppScript::WorkingDirScope::~WorkingDirScope()
 {
-
+	Communal::SetWorkingDir(m_sOriginalDir.c_str());
 }
 
 CppScript::Context::Context(unsigned long long hMod/* = NULL*/)
@@ -398,6 +399,11 @@ CppScript::Context::Context(const Context& o)
 	, m_hMod(NULL)
 {
 	*this = o;
+}
+
+bool CppScript::Context::isValid()
+{
+	return m_hMod != NULL;
 }
 
 void* CppScript::Context::getAddress(const std::string& name)
@@ -424,6 +430,7 @@ void CppScript::Context::_deRef()
 
 		if ((*m_pRefCount) <= 0)
 		{
+			*m_pRefCount = 0;
 			delete m_pRefCount;
 			m_pRefCount = NULL;
 			if (m_hMod)
