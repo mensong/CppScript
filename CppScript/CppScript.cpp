@@ -314,7 +314,7 @@ std::string CppScript::_getCurTempFileName()
 
 std::string CppScript::_generateIncludeFile()
 {
-	const char* szHFile =
+	const char* szHFileFormat =
 		"#ifndef FUNC_API\n"
 		"#define FUNC_API extern \"C\" __declspec(dllexport)\n"
 		"#endif\n"
@@ -325,13 +325,16 @@ std::string CppScript::_generateIncludeFile()
 		"#define CLASS_API __declspec(dllexport)\n"
 		"#endif\n\n"
 		"#define WIN32_LEAN_AND_MEAN\n"
-		"#include <windows.h>\n\n"
-		"#define DECLARE_ENTRY(_EntryName) \\\n"
+		"#include <windows.h>\n"
+		"\n#define DECLARE_ENTRY(_EntryName) \\\n"
 		"	BOOL _EntryName(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved); \\\n"
-		"	class __has_declare_entry { public: __has_declare_entry(){ g_entry = _EntryName; } } g_has_declare_entry;\n";
-	size_t nLen = strlen(szHFile);
+		"	class __has_declare_entry { public: __has_declare_entry(){ g_entry = _EntryName; } } g_has_declare_entry;\n"
+		"\n#define SCRIPT_ID \"%s\"";
+	char szHFileText[2048];
+	sprintf(szHFileText, szHFileFormat, _getCurTempFileName().c_str());
+	size_t nLen = strlen(szHFileText);
 	std::string sHFile = _getCurTempFileName() + ".h";
-	Communal::WriteFile(sHFile.c_str(), szHFile, nLen, 0);
+	Communal::WriteFile(sHFile.c_str(), szHFileText, nLen, 0);
 
 	return sHFile;
 }
