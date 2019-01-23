@@ -74,14 +74,14 @@ void main(int argc, char** argv)
 
 		printf("==================%d===============\n", 1);
 
-		//std::vector<std::string> vctNames;
-		//ct.getNames(vctNames);
-		//for (int i = 0; i < vctNames.size(); ++i)
-		//{
-		//	void* p = ct.getAddress(vctNames[i]);
-		//	printf("%s:%llu\n", vctNames[i].c_str(), (unsigned long long)p);
-		//	assert(p);
-		//}
+		std::vector<std::string> vctNames;
+		ct.getNames(vctNames);
+		for (int i = 0; i < vctNames.size(); ++i)
+		{
+			void* p = ct.getAddress(vctNames[i]);
+			printf("%s:%llu\n", vctNames[i].c_str(), (unsigned long long)p);
+			assert(p);
+		}
 
 		printf("==================%d===============\n", 2);
 
