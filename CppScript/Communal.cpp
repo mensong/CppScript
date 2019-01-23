@@ -517,3 +517,59 @@ bool Communal::DelFloder(const char* dir)
 	FileOp.wFunc = FO_DELETE; //操作类型 
 	return SHFileOperationA(&FileOp) == 0;
 }
+
+bool Communal::StringReplace(std::string& strBase, const std::string& strSrc, const std::string& strDes)
+{
+	bool b = false;
+
+	std::string::size_type pos = 0;
+	std::string::size_type srcLen = strSrc.size();
+	std::string::size_type desLen = strDes.size();
+	pos = strBase.find(strSrc, pos);
+	while ((pos != std::string::npos))
+	{
+		strBase.replace(pos, srcLen, strDes);
+		pos = strBase.find(strSrc, (pos + desLen));
+		b = true;
+	}
+
+	return b;
+}
+
+bool Communal::MakeFloder(const char* sDir)
+{
+	std::string strDir(sDir);//存放要创建的目录字符串
+	StringReplace(strDir, "/", "\\");//把“/”转为“\”
+
+	//确保以'\'结尾以创建最后一个目录
+	if (strDir[strDir.length() - 1] != '\\')
+	{
+		strDir += '\\';
+	}
+	std::vector<std::string> vPath;//存放每一层目录字符串
+	std::string strTemp;//一个临时变量,存放目录字符串
+	bool bSuccess = false;//成功标志
+	//遍历要创建的字符串
+	for (int i = 0; i < strDir.length(); ++i)
+	{
+		if (strDir[i] != '\\')
+		{//如果当前字符不是'\\'
+			strTemp += strDir[i];
+		}
+		else
+		{//如果当前字符是'\\'
+			vPath.push_back(strTemp);//将当前层的字符串添加到数组中
+			strTemp += '\\';
+		}
+	}
+
+	//遍历存放目录的数组,创建每层目录
+	std::vector<std::string>::const_iterator vIter;
+	for (vIter = vPath.begin(); vIter != vPath.end(); vIter++)
+	{
+		//如果CreateDirectory执行成功,返回true,否则返回false
+		bSuccess = CreateDirectoryA(vIter->c_str(), NULL) ? true : false;
+	}
+
+	return bSuccess;
+}

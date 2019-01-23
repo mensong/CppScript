@@ -272,6 +272,9 @@ bool CppScript::setWorkingDir(const std::string& sDir)
 	if (cEnd == '\\' || cEnd == '/')
 		_dir[strlen(_dir.c_str()) - 1] = '\0';
 
+	if (!Communal::IsPathExist(_dir.c_str()))
+		Communal::MakeFloder(_dir.c_str());
+
 	//test dir is valid
 	std::string sOldDir = Communal::GetWorkingDir();
 	if (Communal::SetWorkingDir(_dir.c_str()))
