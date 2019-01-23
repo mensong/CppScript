@@ -136,7 +136,9 @@ bool CppScript::link(std::string* result /*= NULL*/)
 	sOption += ' ';
 	sOption += sOut.c_str();
 	sOption += ' ';
-	sOption += sObjPath.c_str();
+	sOption += sObjPath.c_str();	
+	sOption += ' ';
+	sOption += getLibDirsCmdLine().c_str();
 	sOption += ' ';
 	sOption += getLibrariesCmdLine();
 	
@@ -160,9 +162,10 @@ void CppScript::addIncDir(const std::string& sDir)
 {
 	if (sDir.size() == 0)
 		return;
+	//目录不能以\或/结尾
 	std::string _sDir = sDir;
 	int nLen = (int)strlen(_sDir.c_str());
-	if (_sDir[nLen - 1] == '\\')
+	if (_sDir[nLen - 1] == '\\' || _sDir[nLen - 1] == '/')
 		_sDir[nLen - 1] = '\0';
 	m_vctIncDirs.push_back(_sDir);
 }
@@ -184,18 +187,18 @@ std::vector<std::string> CppScript::getLibraries()
 
 std::string CppScript::getIncDirsCmdLine()
 {
-	std::string sIncDirs;
+	std::string sCmdLine;
 	for (int i = 0; i < (int)m_vctIncDirs.size(); ++i)
 	{
-		if (!sIncDirs.empty())
-			sIncDirs += ' ';
+		if (!sCmdLine.empty())
+			sCmdLine += ' ';
 
-		sIncDirs += "/I \"";
-		sIncDirs += m_vctIncDirs[i].c_str();
-		sIncDirs += "\"";
+		sCmdLine += "/I \"";
+		sCmdLine += m_vctIncDirs[i].c_str();
+		sCmdLine += "\"";
 	}
 
-	return sIncDirs;
+	return sCmdLine;
 }
 
 std::string CppScript::getLibrariesCmdLine()
@@ -211,6 +214,39 @@ std::string CppScript::getLibrariesCmdLine()
 	}
 
 	return sLibs;
+}
+
+void CppScript::addLibDir(const std::string& sDir)
+{
+	if (sDir.size() == 0)
+		return;
+	//目录不能以\或/结尾
+	std::string _sDir = sDir;
+	int nLen = (int)strlen(_sDir.c_str());
+	if (_sDir[nLen - 1] == '\\' || _sDir[nLen - 1] == '/')
+		_sDir[nLen - 1] = '\0';
+	m_vctLibDirs.push_back(_sDir);
+}
+
+std::vector<std::string> CppScript::getLibDirs()
+{
+	return m_vctLibDirs;
+}
+
+std::string CppScript::getLibDirsCmdLine()
+{
+	std::string sCmdLine;
+	for (int i = 0; i < (int)m_vctLibDirs.size(); ++i)
+	{
+		if (!sCmdLine.empty())
+			sCmdLine += ' ';
+
+		sCmdLine += "/LIBPATH:\"";
+		sCmdLine += m_vctLibDirs[i].c_str();
+		sCmdLine += "\"";
+	}
+
+	return sCmdLine;
 }
 
 std::string CppScript::getWorkingDir()

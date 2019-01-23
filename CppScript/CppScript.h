@@ -85,6 +85,13 @@ public:
 	std::vector<std::string> getLibraries();
 	///返回libraries的命令行
 	std::string getLibrariesCmdLine();
+	///添加lib目录
+	// 如果为相对路径，则相对于WorkingDir
+	void addLibDir(const std::string& sDir);
+	///
+	std::vector<std::string> getLibDirs();
+	///返回lib目录命令行
+	std::string getLibDirsCmdLine();
 
 	///compile
 	// sScript不能为不闭合的代码
@@ -120,6 +127,7 @@ private:
 	std::string m_LinkOption;
 	std::vector<std::string> m_vctIncDirs;
 	std::vector<std::string> m_vctLibs;
+	std::vector<std::string> m_vctLibDirs;
 	std::string m_workingDir;
 	int m_compileCount;//每compile一次就递增1
 

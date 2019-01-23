@@ -17,28 +17,45 @@ void main(int argc, char** argv)
 	}
 
 	CppScript cs;
+	
+	//设置工作目录
 	cs.setWorkingDir("..\\..\\tmp");
 
+	//添加包含路径
 	cs.addIncDir("..\\cl\\include\\SDK");
 	cs.addIncDir("..\\cl\\include\\VC10");
-
+		
 #ifdef _WIN64
+	//设置cl.exe及link.exe的路径
 	cs.setCompilePath("..\\cl\\x64\\cl.exe");
 	cs.setLinkPath("..\\cl\\x64\\link.exe");
 
-	cs.addLibrary("..\\cl\\x64\\lib\\VC10\\LIBCMT.lib");
-	cs.addLibrary("..\\cl\\x64\\lib\\VC10\\OLDNAMES.lib");
-	cs.addLibrary("..\\cl\\x64\\lib\\VC10\\libcpmt.lib");
+	//添加lib目录
+	cs.addLibDir("..\\cl\\x64\\lib\\VC10\\");
+	cs.addLibDir("..\\cl\\x64\\lib\\SDK");
+
+	//添加lib
+	//没有指定路径的lib将从lib dirs里面找
+	cs.addLibrary("LIBCMT.lib");
+	cs.addLibrary("OLDNAMES.lib");
+	cs.addLibrary("libcpmt.lib");
 	cs.addLibrary("..\\cl\\x64\\lib\\SDK\\kernel32.lib");
 	cs.addLibrary("..\\cl\\x64\\lib\\SDK\\uuid.lib");
 	cs.addLibrary("..\\cl\\x64\\lib\\SDK\\User32.lib");
 #else
+	//设置cl.exe及link.exe的路径
 	cs.setCompilePath("..\\cl\\x86\\cl.exe");
 	cs.setLinkPath("..\\cl\\x86\\link.exe");
 
-	cs.addLibrary("..\\cl\\x86\\lib\\VC10\\LIBCMT.lib");
-	cs.addLibrary("..\\cl\\x86\\lib\\VC10\\OLDNAMES.lib");
-	cs.addLibrary("..\\cl\\x86\\lib\\VC10\\libcpmt.lib");
+	//添加lib目录
+	cs.addLibDir("..\\cl\\x86\\lib\\VC10\\");
+	cs.addLibDir("..\\cl\\x86\\lib\\SDK");
+
+	//添加lib
+	//没有指定路径的lib将从lib dirs里面找
+	cs.addLibrary("LIBCMT.lib");
+	cs.addLibrary("OLDNAMES.lib");
+	cs.addLibrary("libcpmt.lib");
 	cs.addLibrary("..\\cl\\x86\\lib\\SDK\\kernel32.lib");
 	cs.addLibrary("..\\cl\\x86\\lib\\SDK\\uuid.lib");
 	cs.addLibrary("..\\cl\\x86\\lib\\SDK\\User32.lib");
@@ -48,6 +65,7 @@ void main(int argc, char** argv)
 	cs.setLinkOption("/DEBUG");
 #endif
 
+	//compile
 	std::string sResult;
 	std::string sCpp = Communal::ReadText(argv[1]);
 	printf("==================%s===============\n", "COMPILE");
@@ -59,6 +77,7 @@ void main(int argc, char** argv)
 		return;
 	}
 
+	//link
 	printf("==================%s===============\n", "LINK");
 	res = cs.link(&sResult);
 	printf(sResult.c_str());
@@ -68,6 +87,7 @@ void main(int argc, char** argv)
 		return;
 	}
 
+	//使用
 	printf("==================%s===============\n", "USE");
 	{//使用
 		CppScript::Context ct = cs.eval();
@@ -112,12 +132,8 @@ void main(int argc, char** argv)
 
 	system("pause");
 
+	//清理
 	printf("==================%s===============\n", "CLEAN");
 	//清理临时文件
 	cs.clean();
-
-
-	//CppScriptPack pack(&cs);
-	//pack.init("G:\\test");
-	//pack.testIncludes();
 }
