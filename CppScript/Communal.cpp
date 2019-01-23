@@ -52,7 +52,7 @@ bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& e
 	GetExitCodeProcess(pi.hProcess, &exitCode);
 
 	//读取命令行返回值
-	char buff[1024];
+	char buff[1024 + 1];
 	DWORD dwRead = 0;
 	while (ReadFile(hRead, buff, 1024, &dwRead, NULL))
 	{
