@@ -15,46 +15,46 @@
 
 # 使用
 
-主程序里：
-
-    char path[MAX_PATH] = { 0 };
-	GetCurrentDirectoryA(MAX_PATH, path);
-	std::string sCurDir = path;
+主程序里：    
 
 	CppScript cs;
-	cs.setWorkingDir(sCurDir + "\\..\\..\\tmp");
+	cs.setWorkingDir("..\\..\\tmp");
 
-	cs.addIncDir(sCurDir + "\\..\\..\\cl\\include\\SDK");
-	cs.addIncDir(sCurDir + "\\..\\..\\cl\\include\\VC10");
+	cs.addIncDir("..\\cl\\include\\SDK");
+	cs.addIncDir("..\\cl\\include\\VC10");
 
-    #ifdef _WIN64
-	cs.setCompilePath(sCurDir + "\\..\\..\\cl\\x86_amd64\\cl.exe");
-	cs.setLinkPath(sCurDir + "\\..\\..\\cl\\x86_amd64\\link.exe");
+	#ifdef _WIN64
+	cs.setCompilePath("..\\cl\\x64\\cl.exe");
+	cs.setLinkPath("..\\cl\\x64\\link.exe");
 
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x64\\VC10\\LIBCMT.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x64\\VC10\\OLDNAMES.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x64\\VC10\\libcpmt.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x64\\SDK\\kernel32.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x64\\SDK\\uuid.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x64\\SDK\\User32.lib");
-    #else
-	cs.setCompilePath(sCurDir + "\\..\\..\\cl\\cl.exe");
-	cs.setLinkPath(sCurDir + "\\..\\..\\cl\\link.exe");
+	cs.addLibrary("..\\cl\\x64\\lib\\VC10\\LIBCMT.lib");
+	cs.addLibrary("..\\cl\\x64\\lib\\VC10\\OLDNAMES.lib");
+	cs.addLibrary("..\\cl\\x64\\lib\\VC10\\libcpmt.lib");
+	cs.addLibrary("..\\cl\\x64\\lib\\SDK\\kernel32.lib");
+	cs.addLibrary("..\\cl\\x64\\lib\\SDK\\uuid.lib");
+	cs.addLibrary("..\\cl\\x64\\lib\\SDK\\User32.lib");
+	#else
+	cs.setCompilePath("..\\cl\\x86\\cl.exe");
+	cs.setLinkPath("..\\cl\\x86\\link.exe");
 
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x86\\VC10\\LIBCMT.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x86\\VC10\\OLDNAMES.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x86\\VC10\\libcpmt.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x86\\SDK\\kernel32.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x86\\SDK\\uuid.lib");
-	cs.addLibrary(sCurDir + "\\..\\..\\cl\\lib\\x86\\SDK\\User32.lib");
-    #endif
+	cs.addLibrary("..\\cl\\x86\\lib\\VC10\\LIBCMT.lib");
+	cs.addLibrary("..\\cl\\x86\\lib\\VC10\\OLDNAMES.lib");
+	cs.addLibrary("..\\cl\\x86\\lib\\VC10\\libcpmt.lib");
+	cs.addLibrary("..\\cl\\x86\\lib\\SDK\\kernel32.lib");
+	cs.addLibrary("..\\cl\\x86\\lib\\SDK\\uuid.lib");
+	cs.addLibrary("..\\cl\\x86\\lib\\SDK\\User32.lib");
+	#endif
 	
+	#ifdef _DEBUG
+		cs.setLinkOption("/DEBUG");
+	#endif
+
 	std::string sResult;
-	std::string sCpp = Communal::ReadText("..\\..\\test.cpp");
+	std::string sCpp = Communal::ReadText(argv[1]);
 	printf("==================%s===============\n", "COMPILE");
-	int res = cs.compile(sCpp, &sResult);
+	bool res = cs.compile(sCpp, &sResult);
 	printf(sResult.c_str());
-	if (res != 259)//cl成功则返回259，这个为什么我也不知道
+	if (!res)
 	{
 		cs.clean();
 		return;
@@ -63,7 +63,7 @@
 	printf("==================%s===============\n", "LINK");
 	res = cs.link(&sResult);
 	printf(sResult.c_str());
-	if (res != 259)//link成功则返回259，这个为什么我也不知道
+	if (!res)
 	{
 		cs.clean();
 		return;
@@ -72,12 +72,27 @@
 	printf("==================%s===============\n", "USE");
 	{//使用
 		CppScript::Context ct = cs.eval();
-		
+
+		printf("==================%d===============\n", 1);
+
+		std::vector<std::string> vctNames;
+		ct.getNames(vctNames);
+		for (int i = 0; i < vctNames.size(); ++i)
+		{
+			void* p = ct.getAddress(vctNames[i]);
+			printf("%s:%llu\n", vctNames[i].c_str(), (unsigned long long)p);
+			assert(p);
+		}
+
+		printf("==================%d===============\n", 2);
+
 		//取script的数据
 		int* pMyData = (int *)ct.getAddress("myData");
 		DWORD err = GetLastError();
 		if (pMyData)
 			printf("%d\n", *pMyData);
+
+		printf("==================%d===============\n", 3);
 
 		//把函数给script使用
 		typedef int(*PFN_extFoo)(int n);
@@ -85,11 +100,15 @@
 		if (pPFN)
 			*pPFN = extFoo;
 
+		printf("==================%d===============\n", 4);
+
 		//调用script的函数
 		typedef void(*PFN_printTest)();
 		PFN_printTest pfnPrintTest = (PFN_printTest)ct.getAddress("printTest");
 		if (pfnPrintTest)
 			pfnPrintTest();
+
+		printf("==================%d===============\n", 5);
 	}
 
 	system("pause");
