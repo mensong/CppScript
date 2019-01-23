@@ -112,8 +112,8 @@ public:
 	void clean();
 		
 protected:
-	std::string _getMainTempName();//临时名字，为this的字符串
-	std::string _getCurTempFileName();//临时文件名，不带后缀：_getMainTempName() + '-' + m_compileCount
+	std::string _getMainID();//ID
+	std::string _getCurFileName();//临时文件名，不带后缀：_getMainID() + '-' + m_compileCount
 	std::string _generateIncludeFile();//创建头文件
 	std::vector<std::string> _generateCFile(const std::string& sCode);//创建源文件，返回不带cpp后缀名的列表
 	std::string _getSrcFileCmdLine(const std::vector<std::string>& vctNames);//获得源文件命令行
@@ -129,6 +129,7 @@ private:
 	std::vector<std::string> m_vctLibs;
 	std::vector<std::string> m_vctLibDirs;
 	std::string m_workingDir;
+	std::string m_ID;
 	int m_compileCount;//每compile一次就递增1
 
 private:

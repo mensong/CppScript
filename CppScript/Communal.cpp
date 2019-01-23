@@ -536,6 +536,11 @@ bool Communal::StringReplace(std::string& strBase, const std::string& strSrc, co
 	return b;
 }
 
+std::string Communal::MakeGUID()
+{
+	return std::to_string(GetTickCount64());
+}
+
 bool Communal::MakeFloder(const char* sDir)
 {
 	std::string strDir(sDir);//存放要创建的目录字符串

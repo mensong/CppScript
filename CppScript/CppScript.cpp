@@ -76,7 +76,7 @@ bool CppScript::compile(const std::string& sScript, std::string* result /*= NULL
 	if (result)
 		*result = sResult;
 	
-	std::string sResultFile = _getCurTempFileName().c_str();
+	std::string sResultFile = _getCurFileName().c_str();
 	sResultFile += ".obj";
 	return Communal::IsPathExist(sResultFile.c_str());
 }
@@ -147,7 +147,7 @@ bool CppScript::link(std::string* result /*= NULL*/)
 	if (result)
 		*result = sResult;
 
-	std::string sResultFile = _getCurTempFileName().c_str();
+	std::string sResultFile = _getCurFileName().c_str();
 	sResultFile += ".dll";	
 	return Communal::IsPathExist(sResultFile.c_str());
 }
@@ -290,7 +290,7 @@ void CppScript::clean()
 {
 	WorkingDirScope _auto_dir(this);
 
-	std::string sTempName = _getMainTempName();
+	std::string sTempName = _getMainID();
 
 	for (int i = 1; i <= m_compileCount; ++i)
 	{
@@ -305,14 +305,17 @@ void CppScript::clean()
 	}
 }
 
-std::string CppScript::_getMainTempName()
+std::string CppScript::_getMainID()
 {
-	return std::to_string((unsigned long long)this);
+	if (m_ID.empty())
+		m_ID = Communal::MakeGUID();
+
+	return m_ID;
 }
 
-std::string CppScript::_getCurTempFileName()
+std::string CppScript::_getCurFileName()
 {
-	return _getMainTempName() + '-' + std::to_string(m_compileCount);
+	return _getMainID() + '-' + std::to_string(m_compileCount);
 }
 
 std::string CppScript::_generateIncludeFile()
@@ -334,9 +337,9 @@ std::string CppScript::_generateIncludeFile()
 		"	class __has_declare_entry { public: __has_declare_entry(){ g_entry = _EntryName; } } g_has_declare_entry;\n"
 		"\n#define SCRIPT_ID \"%s\"";
 	char szHFileText[2048];
-	sprintf(szHFileText, szHFileFormat, _getCurTempFileName().c_str());
+	sprintf(szHFileText, szHFileFormat, _getCurFileName().c_str());
 	size_t nLen = strlen(szHFileText);
-	std::string sHFile = _getCurTempFileName() + ".h";
+	std::string sHFile = _getCurFileName() + ".h";
 	Communal::WriteFile(sHFile.c_str(), szHFileText, nLen, 0);
 
 	return sHFile;
@@ -345,7 +348,7 @@ std::string CppScript::_generateIncludeFile()
 //²»´øºó×º
 std::vector<std::string> CppScript::_generateCFile(const std::string& sCode)
 {
-	std::string sTempFileName = _getCurTempFileName();
+	std::string sTempFileName = _getCurFileName();
 
 	std::string sCppContent;
 
@@ -408,7 +411,7 @@ std::string CppScript::_getObjFileCmdLine(const std::vector<std::string>& vctNam
 
 std::string CppScript::_getOutFile()
 {
-	return _getCurTempFileName() + ".dll";
+	return _getCurFileName() + ".dll";
 }
 
 
