@@ -30,26 +30,54 @@ std::string CppScript::getLinkPath()
 	return m_LinkPath;
 }
 
-void CppScript::setCompileOption(const std::string& sOption)
+void CppScript::addCompileOption(const std::string& sOption)
 {
-	m_CompileOption = sOption;
+	m_vctCompileOption.push_back(sOption);
 }
 
-std::string CppScript::getCompileOption()
+std::vector<std::string> CppScript::getCompileOptions()
 {
-	return m_CompileOption;
+	return m_vctCompileOption;
 }
 
-void CppScript::setLinkOption(const std::string& sOption)
+std::string CppScript::getCompileOptionCmdLine()
 {
-	m_LinkOption = sOption;
+	std::string sCmdLine;
+	for (int i = 0; i < (int)m_vctCompileOption.size(); ++i)
+	{
+		if (!sCmdLine.empty())
+			sCmdLine += ' ';
+
+		sCmdLine += m_vctCompileOption[i].c_str();
+	}
+
+	return sCmdLine;
 }
 
-std::string CppScript::getLinkOption()
+
+void CppScript::addLinkOption(const std::string& sOption)
 {
-	return m_LinkOption;
+	m_vctLinkOption.push_back(sOption);
 }
 
+std::vector<std::string> CppScript::getLinkOptions()
+{
+	return m_vctLinkOption;
+}
+
+std::string CppScript::getLinkOptionCmdLine()
+{
+	std::string sCmdLine;
+	for (int i = 0; i < (int)m_vctLinkOption.size(); ++i)
+	{
+		if (!sCmdLine.empty())
+			sCmdLine += ' ';
+
+		sCmdLine += m_vctLinkOption[i].c_str();
+	}
+
+	return sCmdLine;
+}
 
 bool CppScript::compile(const std::string& sScript, std::string* result /*= NULL*/)
 {
@@ -67,7 +95,7 @@ bool CppScript::compile(const std::string& sScript, std::string* result /*= NULL
 	std::string sOption = "/nologo /c /EHsc ";
 	sOption += sCPath.c_str();
 	sOption += " ";
-	sOption += getCompileOption().c_str();
+	sOption += getCompileOptionCmdLine().c_str();
 	sOption += " ";
 	sOption += getIncDirsCmdLine().c_str();
 
@@ -132,7 +160,7 @@ bool CppScript::link(std::string* result /*= NULL*/)
 	std::string sOption = "/nologo /DLL ";
 	sOption += sMachine.c_str();
 	sOption += ' ';
-	sOption += getLinkOption().c_str();
+	sOption += getLinkOptionCmdLine().c_str();
 	sOption += ' ';
 	sOption += sOut.c_str();
 	sOption += ' ';

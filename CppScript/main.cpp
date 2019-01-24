@@ -62,8 +62,10 @@ void main(int argc, char** argv)
 #endif
 	
 #ifdef _DEBUG
-	cs.setCompileOption("/showIncludes");
-	cs.setLinkOption("/VERBOSE:Lib");
+	cs.addCompileOption("/Od /ZI");
+	cs.addCompileOption("/showIncludes");
+	cs.addLinkOption("/DEBUG");
+	cs.addLinkOption("/VERBOSE:Lib");
 #endif
 
 	//compile

@@ -62,13 +62,15 @@ public:
 
 	///设置compile的其它选项
 	// 例如：预编译等。见 cl.exe /?
-	void setCompileOption(const std::string& sOption);
-	std::string getCompileOption();
+	void addCompileOption(const std::string& sOption);
+	std::vector<std::string> getCompileOptions();
+	std::string getCompileOptionCmdLine();
 
 	///设置link的其它选项
 	// 例如：优化等。见 link.exe /?
-	void setLinkOption(const std::string& sOption);
-	std::string getLinkOption();
+	void addLinkOption(const std::string& sOption);
+	std::vector<std::string> getLinkOptions();
+	std::string getLinkOptionCmdLine();
 	
 	///添加包含目录
 	// 如果为相对路径，则相对于WorkingDir
@@ -122,9 +124,9 @@ protected:
 
 private:
 	std::string m_CompilePath;
-	std::string m_CompileOption;
 	std::string m_LinkPath;	
-	std::string m_LinkOption;
+	std::vector<std::string> m_vctCompileOption;
+	std::vector<std::string> m_vctLinkOption;
 	std::vector<std::string> m_vctIncDirs;
 	std::vector<std::string> m_vctLibs;
 	std::vector<std::string> m_vctLibDirs;
