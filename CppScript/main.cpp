@@ -18,6 +18,9 @@ void main(int argc, char** argv)
 
 	CppScript cs;
 	
+	//在开始前最好清空临时目录，否则可能会有很多垃圾
+	Communal::CleanFloder("..\\..\\tmp");
+
 	//设置工作目录
 	cs.setWorkingDir("..\\..\\tmp");
 

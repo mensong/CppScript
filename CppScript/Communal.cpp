@@ -493,29 +493,17 @@ std::string Communal::GetDirFromPath(std::string path)
 	return path.substr(0, idx1);
 }
 
-bool Communal::DelFloder(const char* dir)
+bool Communal::CleanFloder(const char* dir)
 {
-	char szDir[MAX_PATH];//源文件路径
-	int nLen = strlen(dir);
-	strcpy(szDir, dir);
-	szDir[nLen] = '\0';//必须要以“\0\0”结尾，不然删除不了
-	szDir[nLen + 1] = '\0';
-	
-	SHFILEOPSTRUCTA FileOp;
-	SecureZeroMemory((void*)&FileOp, sizeof(SHFILEOPSTRUCTA));//secureZeroMemory和ZeroMerory的区别
-	//根据MSDN上，ZeryMerory在当缓冲区的字符串超出生命周期的时候，
-	//会被编译器优化，从而缓冲区的内容会被恶意软件捕捉到。
-	//引起软件安全问题，特别是对于密码这些比较敏感的信息而说。
-	//而SecureZeroMemory则不会引发此问题，保证缓冲区的内容会被正确的清零。
-	//如果涉及到比较敏感的内容，尽量使用SecureZeroMemory函数。
-	FileOp.fFlags = FOF_NOCONFIRMATION; //操作与确认标志 
-	FileOp.hNameMappings = NULL; //文件映射
-	FileOp.hwnd = NULL; //消息发送的窗口句柄；
-	FileOp.lpszProgressTitle = NULL; //文件操作进度窗口标题 
-	FileOp.pFrom = szDir; //源文件及路径 
-	FileOp.pTo = NULL; //目标文件及路径 
-	FileOp.wFunc = FO_DELETE; //操作类型 
-	return SHFileOperationA(&FileOp) == 0;
+	std::vector<std::string> vctDirs;
+	std::vector<std::string> vctFiles;
+	ListFilesA(dir, vctDirs, vctFiles, "*.*", false, true);
+	for (int i = 0; i < vctFiles.size(); ++i)
+	{
+		DelFile(vctFiles[i].c_str());
+	}
+
+	return true;
 }
 
 bool Communal::StringReplace(std::string& strBase, const std::string& strSrc, const std::string& strDes)
