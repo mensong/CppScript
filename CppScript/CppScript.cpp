@@ -99,7 +99,7 @@ bool CppScript::compile(const std::string& sScript, std::string* result /*= NULL
 	sOption += " ";
 	sOption += getIncDirsCmdLine().c_str();
 
-	if (!Communal::Execute(m_CompilePath.c_str(), sOption.c_str(), exitCode, sResult))
+	if (!Communal::Execute(m_CompilePath.c_str(), sOption.c_str(), exitCode, &sResult))
 		return false;
 	if (result)
 		*result = sResult;
@@ -170,7 +170,7 @@ bool CppScript::link(std::string* result /*= NULL*/)
 	sOption += ' ';
 	sOption += getLibrariesCmdLine();
 	
-	if (!Communal::Execute(m_LinkPath.c_str(), sOption.c_str(), exitCode, sResult))
+	if (!Communal::Execute(m_LinkPath.c_str(), sOption.c_str(), exitCode, &sResult))
 		return false;
 	if (result)
 		*result = sResult;

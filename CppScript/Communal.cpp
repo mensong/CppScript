@@ -3,17 +3,20 @@
 #include <windows.h>
 #include <io.h>
 
-bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& exitCode, std::string& sPrintText)
+bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& exitCode, std::string* sPrintText/* = NULL*/)
 {
 	if (!szFile || szFile[0] == '\0')
 		return false;
 
-	//创建匿名管道
-	SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
 	HANDLE hRead, hWrite;
-	if (!CreatePipe(&hRead, &hWrite, &sa, 0))
+	if (sPrintText != NULL)
 	{
-		return false;
+		//创建匿名管道
+		SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
+		if (!CreatePipe(&hRead, &hWrite, &sa, 0))
+		{
+			return false;
+		}
 	}
 
 	int nCmdLen = (strlen(szFile) + strlen(szParam) + 4) * sizeof(char);
@@ -33,33 +36,42 @@ bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& e
 	GetStartupInfoA(&si);
 	si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
 	si.wShowWindow = SW_HIDE;
-	si.hStdError = hWrite;
-	si.hStdOutput = hWrite;
+	if (sPrintText != NULL)
+	{
+		si.hStdError = hWrite;
+		si.hStdOutput = hWrite;
+	}
 
 	//启动命令行
 	PROCESS_INFORMATION pi;
 	if (!CreateProcessA(NULL, (char *)szCmd, NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi))
 	{
-		CloseHandle(hWrite);
-		CloseHandle(hRead);
+		if (sPrintText != NULL)
+		{
+			CloseHandle(hWrite);
+			CloseHandle(hRead);
+		}
 		return false;
 	}
 
-	//立即关闭hWrite
-	CloseHandle(hWrite);
+	if (sPrintText != NULL)
+	{
+		//立即关闭hWrite
+		CloseHandle(hWrite);
+
+		//读取命令行返回值
+		char buff[1024 + 1];
+		DWORD dwRead = 0;
+		while (ReadFile(hRead, buff, 1024, &dwRead, NULL))
+		{
+			buff[dwRead] = '\0';
+			sPrintText->append(buff, dwRead);
+		}
+		CloseHandle(hRead);
+	}
 
 	//获得返回值
 	GetExitCodeProcess(pi.hProcess, &exitCode);
-
-	//读取命令行返回值
-	char buff[1024 + 1];
-	DWORD dwRead = 0;
-	while (ReadFile(hRead, buff, 1024, &dwRead, NULL))
-	{
-		buff[dwRead] = '\0';
-		sPrintText.append(buff, dwRead);
-	}
-	CloseHandle(hRead);
 
 	CloseHandle(pi.hProcess);
 	CloseHandle(pi.hThread);
