@@ -69,6 +69,10 @@ bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& e
 		}
 		CloseHandle(hRead);
 	}
+	else
+	{
+		WaitForSingleObject(pi.hProcess, INFINITE);
+	}
 
 	//获得返回值
 	GetExitCodeProcess(pi.hProcess, &exitCode);
