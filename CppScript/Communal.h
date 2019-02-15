@@ -14,7 +14,6 @@ public:
 	static unsigned long long LoadLib(const char* libPath);
 	static void* GetAddressByExportName(unsigned long long hHanle, const char* sExportName);
 	static bool FreeLib(unsigned long long hHandle);
-	static std::vector<std::string> GetDllExportNames(const char* pFile);
 	static std::string GetModulePath(unsigned long long hHandle);
 	static void ListFilesA(const char * lpPath, std::vector<std::string>& vctDir, std::vector<std::string>& vctFiles,
 		const char * filter, bool bSubDir, bool bAppendPath);

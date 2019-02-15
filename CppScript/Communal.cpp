@@ -275,13 +275,6 @@ bool Communal::FreeLib(unsigned long long hHandle)
 	return (TRUE == FreeLibrary((HMODULE)hHandle));
 }
 
-std::vector<std::string> Communal::GetDllExportNames(const char* pFile)
-{
-	std::vector<std::string> vctRet;
-
-	return vctRet;
-}
-
 std::string Communal::GetModulePath(unsigned long long hHandle)
 {
 	char path[MAX_PATH] = { 0 };
