@@ -3,13 +3,13 @@
 #include <windows.h>
 #include <io.h>
 
-bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& exitCode, std::string* sPrintText/* = NULL*/)
+bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& exitCode, std::string* sPrintText/* = NULL*/, unsigned long timeout/* = 0*/)
 {
 	if (!szFile || szFile[0] == '\0')
 		return false;
 
 	HANDLE hRead, hWrite;
-	if (sPrintText != NULL)
+	if (sPrintText)
 	{
 		//创建匿名管道
 		SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
@@ -35,8 +35,8 @@ bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& e
 	STARTUPINFOA si = { sizeof(STARTUPINFOA) };
 	GetStartupInfoA(&si);
 	si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
-	si.wShowWindow = SW_HIDE;
-	if (sPrintText != NULL)
+	si.wShowWindow = SW_NORMAL;
+	if (sPrintText)
 	{
 		si.hStdError = hWrite;
 		si.hStdOutput = hWrite;
@@ -46,7 +46,7 @@ bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& e
 	PROCESS_INFORMATION pi;
 	if (!CreateProcessA(NULL, (char *)szCmd, NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi))
 	{
-		if (sPrintText != NULL)
+		if (sPrintText)
 		{
 			CloseHandle(hWrite);
 			CloseHandle(hRead);
@@ -54,7 +54,33 @@ bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& e
 		return false;
 	}
 
-	if (sPrintText != NULL)
+	DWORD waitRet = 0;
+	if (timeout > 0)
+		waitRet = WaitForSingleObject(pi.hProcess, timeout);
+	else
+		waitRet = WaitForSingleObject(pi.hProcess, INFINITE);
+
+	switch (waitRet)
+	{
+	case WAIT_TIMEOUT:
+	case WAIT_FAILED:
+		if (sPrintText)
+		{
+			//立即关闭hWrite
+			CloseHandle(hWrite);
+			CloseHandle(hRead);
+		}
+		TerminateProcess(pi.hProcess, 1);
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
+		return false;
+	case WAIT_OBJECT_0:
+		GetExitCodeProcess(pi.hProcess, &exitCode);//获得返回值
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
+	}
+
+	if (sPrintText)
 	{
 		//立即关闭hWrite
 		CloseHandle(hWrite);
@@ -69,16 +95,6 @@ bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& e
 		}
 		CloseHandle(hRead);
 	}
-	else
-	{
-		WaitForSingleObject(pi.hProcess, INFINITE);
-	}
-
-	//获得返回值
-	GetExitCodeProcess(pi.hProcess, &exitCode);
-
-	CloseHandle(pi.hProcess);
-	CloseHandle(pi.hThread);
 
 	return true;
 }
