@@ -2,6 +2,30 @@
 #include <malloc.h>
 #include <windows.h>
 #include <io.h>
+#include <process.h>
+#include <tuple>
+
+
+unsigned __stdcall _Execute_readAndWrite(void* arg)
+{
+	std::tuple<HANDLE, std::string*, HANDLE>* tpParams = (std::tuple<HANDLE, std::string*, HANDLE>*)arg;
+	HANDLE hRead = std::get<0>(*tpParams);
+	std::string* sPrintText = std::get<1>(*tpParams);
+	HANDLE ev = std::get<2>(*tpParams);
+
+	//读取命令行返回值
+	char buff[1024 + 1];
+	DWORD dwRead = 0;
+	while (ReadFile(hRead, buff, 1024, &dwRead, NULL))
+	{
+		buff[dwRead] = '\0';
+		sPrintText->append(buff, dwRead);
+	}
+
+	SetEvent(ev);
+
+	return 0;
+}
 
 bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& exitCode, std::string* sPrintText/* = NULL*/, unsigned long timeout/* = 0*/)
 {
@@ -54,49 +78,43 @@ bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& e
 		return false;
 	}
 
+	//立即关闭hWrite
+	CloseHandle(hWrite);
+	
+	HANDLE ev = CreateEventA(NULL, TRUE, FALSE, NULL);
+
+	bool bRet = true;
+
+	unsigned int uiThreadID = 0;
+	HANDLE hThreadRW = (HANDLE)_beginthreadex(NULL, 0, _Execute_readAndWrite, 
+		(void*)&(std::tuple<HANDLE, std::string*, HANDLE>(hRead, sPrintText, ev)), 0, &uiThreadID);
+	
 	DWORD waitRet = 0;
 	if (timeout > 0)
-		waitRet = WaitForSingleObject(pi.hProcess, timeout);
+		waitRet = WaitForSingleObject(ev, timeout);
 	else
-		waitRet = WaitForSingleObject(pi.hProcess, INFINITE);
+		waitRet = WaitForSingleObject(ev, INFINITE);
 
 	switch (waitRet)
 	{
 	case WAIT_TIMEOUT:
 	case WAIT_FAILED:
-		if (sPrintText)
-		{
-			//立即关闭hWrite
-			CloseHandle(hWrite);
-			CloseHandle(hRead);
-		}
+		TerminateThread(hThreadRW, 1);
 		TerminateProcess(pi.hProcess, 1);
-		CloseHandle(pi.hProcess);
-		CloseHandle(pi.hThread);
-		return false;
-	case WAIT_OBJECT_0:
+		bRet = false;
+		break;
+	case WAIT_OBJECT_0:		
 		GetExitCodeProcess(pi.hProcess, &exitCode);//获得返回值
-		CloseHandle(pi.hProcess);
-		CloseHandle(pi.hThread);
+		bRet = true;
+		break;
 	}
 
-	if (sPrintText)
-	{
-		//立即关闭hWrite
-		CloseHandle(hWrite);
+	CloseHandle(hRead);
+	CloseHandle(pi.hProcess);
+	CloseHandle(pi.hThread);
+	CloseHandle(ev);
 
-		//读取命令行返回值
-		char buff[1024 + 1];
-		DWORD dwRead = 0;
-		while (ReadFile(hRead, buff, 1024, &dwRead, NULL))
-		{
-			buff[dwRead] = '\0';
-			sPrintText->append(buff, dwRead);
-		}
-		CloseHandle(hRead);
-	}
-
-	return true;
+	return bRet;
 }
 
 size_t Communal::WriteFile(const char * path, const char * writeContent, size_t & in_outLen,
