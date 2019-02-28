@@ -18,8 +18,11 @@ unsigned __stdcall _Execute_readAndWrite(void* arg)
 	DWORD dwRead = 0;
 	while (ReadFile(hRead, buff, 1024, &dwRead, NULL))
 	{
-		buff[dwRead] = '\0';
-		sPrintText->append(buff, dwRead);
+		if (sPrintText)
+		{
+			buff[dwRead] = '\0';
+			sPrintText->append(buff, dwRead);
+		}
 	}
 
 	SetEvent(ev);
@@ -33,14 +36,11 @@ bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& e
 		return false;
 
 	HANDLE hRead, hWrite;
-	if (sPrintText)
+	//创建匿名管道
+	SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
+	if (!CreatePipe(&hRead, &hWrite, &sa, 0))
 	{
-		//创建匿名管道
-		SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
-		if (!CreatePipe(&hRead, &hWrite, &sa, 0))
-		{
-			return false;
-		}
+		return false;
 	}
 
 	int nCmdLen = (strlen(szFile) + strlen(szParam) + 4) * sizeof(char);
@@ -60,21 +60,15 @@ bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& e
 	GetStartupInfoA(&si);
 	si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
 	si.wShowWindow = SW_NORMAL;
-	if (sPrintText)
-	{
-		si.hStdError = hWrite;
-		si.hStdOutput = hWrite;
-	}
+	si.hStdError = hWrite;
+	si.hStdOutput = hWrite;
 
 	//启动命令行
 	PROCESS_INFORMATION pi;
 	if (!CreateProcessA(NULL, (char *)szCmd, NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi))
 	{
-		if (sPrintText)
-		{
-			CloseHandle(hWrite);
-			CloseHandle(hRead);
-		}
+		CloseHandle(hWrite);
+		CloseHandle(hRead);
 		return false;
 	}
 
