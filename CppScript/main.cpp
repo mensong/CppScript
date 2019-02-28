@@ -64,9 +64,12 @@ void main(int argc, char** argv)
 	cs.addLibrary("..\\cl\\x86\\lib\\SDK\\User32.lib");
 #endif
 	
+	//添加宏定义
+	cs.addDefinition("MY_DEF=1");
+
 #ifdef _DEBUG
-	cs.addCompileOption("/Od /ZI");
-	cs.addCompileOption("/showIncludes");
+	cs.addCompileOption("/Od /Zi");//Od禁用优化，Zi启用调试信息
+	cs.addCompileOption("/showIncludes");//打印所有include files
 	cs.addLinkOption("/DEBUG");
 	cs.addLinkOption("/VERBOSE:Lib");
 #endif

@@ -95,6 +95,13 @@ public:
 	///返回lib目录命令行
 	std::string getLibDirsCmdLine();
 
+	///添加宏定义
+	void addDefinition(const std::string& sDefinition);
+	///
+	std::vector<std::string> getDefinitions();
+	///返回lib目录命令行
+	std::string getDefinitionCmdLine();
+
 	///compile
 	// sScript不能为不闭合的代码
 	bool compile(const std::string& sScript, std::string* result = NULL);
@@ -130,6 +137,7 @@ private:
 	std::vector<std::string> m_vctIncDirs;
 	std::vector<std::string> m_vctLibs;
 	std::vector<std::string> m_vctLibDirs;
+	std::vector<std::string> m_vctDefinition;
 	std::string m_workingDir;
 	std::string m_ID;
 	int m_compileCount;//每compile一次就递增1

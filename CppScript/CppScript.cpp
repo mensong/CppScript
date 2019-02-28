@@ -98,6 +98,8 @@ bool CppScript::compile(const std::string& sScript, std::string* result /*= NULL
 	sOption += getCompileOptionCmdLine().c_str();
 	sOption += " ";
 	sOption += getIncDirsCmdLine().c_str();
+	sOption += " ";
+	sOption += getDefinitionCmdLine().c_str();
 
 	if (!Communal::Execute(m_CompilePath.c_str(), sOption.c_str(), exitCode, &sResult))
 		return false;
@@ -271,6 +273,32 @@ std::string CppScript::getLibDirsCmdLine()
 
 		sCmdLine += "/LIBPATH:\"";
 		sCmdLine += m_vctLibDirs[i].c_str();
+		sCmdLine += "\"";
+	}
+
+	return sCmdLine;
+}
+
+void CppScript::addDefinition(const std::string& sDefinition)
+{
+	m_vctDefinition.push_back(sDefinition);
+}
+
+std::vector<std::string> CppScript::getDefinitions()
+{
+	return m_vctDefinition;
+}
+
+std::string CppScript::getDefinitionCmdLine()
+{
+	std::string sCmdLine;
+	for (int i = 0; i < (int)m_vctDefinition.size(); ++i)
+	{
+		if (!sCmdLine.empty())
+			sCmdLine += ' ';
+
+		sCmdLine += "/D \"";
+		sCmdLine += m_vctDefinition[i].c_str();
 		sCmdLine += "\"";
 	}
 

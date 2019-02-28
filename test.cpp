@@ -37,6 +37,10 @@ public:
 DECLARE_ENTRY(MyEntry)
 BOOL MyEntry(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
+#if (defined MY_DEF) && (MY_DEF == 1)
+	MessageBoxA(NULL, "MY_DEF", "", 0);
+#endif
+
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
