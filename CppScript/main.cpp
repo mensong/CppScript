@@ -82,10 +82,7 @@ void main(int argc, char** argv)
 	bool res = cs.compile(sCpp, &sResult);
 #elif 1
 	std::vector<std::string> cppFiles;
-	//cppFiles.push_back("test.cpp");
-	//cppFiles.push_back("c.cpp");
-	cppFiles.push_back("F:\\git\\CppScript\\test.cpp");
-	cppFiles.push_back("F:\\git\\CppScript\\Debug\\c.cpp");
+	cppFiles.push_back("..\\test.cpp");
 	bool res = cs.compile(cppFiles, &sResult);
 #else
 	bool res = cs.compileInClosure("MessageBoxA(NULL, \"compileInClosure\", SCRIPT_ID, 0);", &sResult);

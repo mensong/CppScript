@@ -105,6 +105,9 @@ public:
 	///compile
 	// sScript不能为不闭合的代码
 	bool compile(const std::string& sScript, std::string* result = NULL);
+
+	///compile
+	// sCppFiles如果为相对路径则相对于WorkingDir
 	bool compile(const std::vector<std::string>& sCppFiles, std::string* result = NULL);
 
 	///compile in closure
