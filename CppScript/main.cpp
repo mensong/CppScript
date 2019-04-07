@@ -76,12 +76,24 @@ void main(int argc, char** argv)
 
 	//compile
 	std::string sResult;
+#if 0
 	std::string sCpp = Communal::ReadText(argv[1]);
 	printf("==================%s===============\n", "COMPILE");
 	bool res = cs.compile(sCpp, &sResult);
+#elif 1
+	std::vector<std::string> cppFiles;
+	//cppFiles.push_back("test.cpp");
+	//cppFiles.push_back("c.cpp");
+	cppFiles.push_back("F:\\git\\CppScript\\test.cpp");
+	cppFiles.push_back("F:\\git\\CppScript\\Debug\\c.cpp");
+	bool res = cs.compile(cppFiles, &sResult);
+#else
+	bool res = cs.compileInClosure("MessageBoxA(NULL, \"compileInClosure\", SCRIPT_ID, 0);", &sResult);
+#endif
 	printf(sResult.c_str());
 	if (!res)
 	{
+		system("pause");
 		cs.clean();
 		return;
 	}
@@ -92,6 +104,7 @@ void main(int argc, char** argv)
 	printf(sResult.c_str());
 	if (!res)
 	{
+		system("pause");
 		cs.clean();
 		return;
 	}

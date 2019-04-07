@@ -18,6 +18,7 @@ public:
 	static void ListFilesA(const char * lpPath, std::vector<std::string>& vctDir, std::vector<std::string>& vctFiles,
 		const char * filter, bool bSubDir, bool bAppendPath);
 	static bool DelFile(const char* pFilePath);
+	static bool DelFloder(const char* pDirPath);
 	static bool IsPathExist(const char* path);
 	static bool GetExportNames(const char* dllPath, std::vector<std::string>& outExportNames);
 	static bool CpyFile(const char* srcPath, const char* dstPath);
@@ -26,6 +27,7 @@ public:
 	static std::string GetDirFromPath(std::string path);
 	static bool CleanFloder(const char* dir);
 	static bool MakeFloder(const char* dir);
+	static void RemoveDir(const char* dirPath);
 	static bool StringReplace(std::string& strBase, const std::string& strSrc, const std::string& strDes);
 	static std::string MakeGUID();
 };

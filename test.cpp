@@ -1,3 +1,5 @@
+
+#include "CPP_COM.H"
 #include <iostream>
 #include <string>
 
@@ -33,27 +35,25 @@ public:
 	}
 };
 
-//定义入口点，也可以不定义
-DECLARE_ENTRY(MyEntry)
-BOOL MyEntry(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
+extern "C" BOOL WINAPI DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
 #if (defined MY_DEF) && (MY_DEF == 1)
-	MessageBoxA(NULL, "MY_DEF", "", 0);
+	MessageBoxA(NULL, "MY_DEF", SCRIPT_ID, 0);
 #endif
 
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
-		MessageBoxA(NULL, "DLL_PROCESS_ATTACH", "", 0);
+		MessageBoxA(NULL, "DLL_PROCESS_ATTACH", SCRIPT_ID, 0);
 		break;
 	case DLL_PROCESS_DETACH:
-		MessageBoxA(NULL, "DLL_PROCESS_DETACH", "", 0);
+		MessageBoxA(NULL, "DLL_PROCESS_DETACH", SCRIPT_ID, 0);
 		break;
 	case DLL_THREAD_ATTACH:
-		MessageBoxA(NULL, "DLL_THREAD_ATTACH", "", 0);
+		MessageBoxA(NULL, "DLL_THREAD_ATTACH", SCRIPT_ID, 0);
 		break;
 	case DLL_THREAD_DETACH:
-		MessageBoxA(NULL, "DLL_THREAD_DETACH", "", 0);
+		MessageBoxA(NULL, "DLL_THREAD_DETACH", SCRIPT_ID, 0);
 		break;
 	default:
 		break;

@@ -4,6 +4,7 @@
 #include <io.h>
 #include <process.h>
 #include <tuple>
+#include <direct.h>
 
 
 unsigned __stdcall _Execute_readAndWrite(void* arg)
@@ -381,6 +382,11 @@ bool Communal::DelFile(const char* pFilePath)
 	return (b == TRUE);
 }
 
+bool Communal::DelFloder(const char* pDirPath)
+{
+	return rmdir(pDirPath) == 0;
+}
+
 bool Communal::IsPathExist(const char* path)
 {
 	int nRet = _access(path, 0);
@@ -444,16 +450,20 @@ bool Communal::GetExportNames(const char* dllPath, std::vector<std::string>& out
 		(IMAGE_OPTIONAL_HEADER *)((BYTE*)mod_base + pDosHeader->e_lfanew + 24);//optional头首址
 	IMAGE_EXPORT_DIRECTORY* pExportDesc = (IMAGE_EXPORT_DIRECTORY*)
 		ImageRvaToVax(pNtHeader, mod_base, pOptHeader->DataDirectory[0].VirtualAddress, 0);
-	//导出表首址。函数名称表首地址每个DWORD代表一个函数名字字符串的地址
-	PDWORD nameAddr = (PDWORD)ImageRvaToVax(pNtHeader, mod_base, pExportDesc->AddressOfNames, 0);
-	char* func_name = (char*)ImageRvaToVax(pNtHeader, mod_base, (DWORD)nameAddr[0], 0);
-	DWORD i = 0;
-	DWORD unti = pExportDesc->NumberOfNames;
-	for (i = 0; i < unti; i++)
+	if (pExportDesc != NULL)
 	{
-		outExportNames.push_back(func_name);
-		func_name = (char*)ImageRvaToVax(pNtHeader, mod_base, (DWORD)nameAddr[i], 0);
+		//导出表首址。函数名称表首地址每个DWORD代表一个函数名字字符串的地址
+		PDWORD nameAddr = (PDWORD)ImageRvaToVax(pNtHeader, mod_base, pExportDesc->AddressOfNames, 0);
+		char* func_name = (char*)ImageRvaToVax(pNtHeader, mod_base, (DWORD)nameAddr[0], 0);
+		DWORD i = 0;
+		DWORD unti = pExportDesc->NumberOfNames;
+		for (i = 0; i < unti; i++)
+		{
+			outExportNames.push_back(func_name);
+			func_name = (char*)ImageRvaToVax(pNtHeader, mod_base, (DWORD)nameAddr[i], 0);
+		}
 	}
+
 	::FreeLibrary(hModule);
 	UnmapViewOfFile(mod_base);
 	CloseHandle(hFileMap);
@@ -602,4 +612,25 @@ bool Communal::MakeFloder(const char* sDir)
 	}
 
 	return bSuccess;
+}
+
+/*
+函数功能：删除该文件夹，包括其中所有的文件和文件夹
+*/
+void Communal::RemoveDir(const char* dirPath)
+{
+	std::vector<std::string> dirs;
+	std::vector<std::string> files;
+	ListFilesA(dirPath, dirs, files, "*", true, true);
+	for (int i = 0; i < files.size(); ++i)
+	{
+		DelFile(files[i].c_str());
+	}
+
+	for (int i = 0; i < dirs.size(); ++i)
+	{
+		DelFloder(dirs[i].c_str());
+	}
+
+	DelFloder(dirPath);
 }

@@ -1,5 +1,8 @@
 #include "CppScript.h"
 #include "Communal.h"
+#include <io.h>
+
+#define COMMON_H_FILE "CPP_COM.H"
 
 CppScript::CppScript()
 	: m_compileCount(0)
@@ -84,8 +87,10 @@ bool CppScript::compile(const std::string& sScript, std::string* result /*= NULL
 	WorkingDirScope _auto_dir(this);
 
 	++m_compileCount;
+	m_vctTmpDefinition.clear();
+	m_vctTmpIncDirs.clear();
 
-	_generateIncludeFile();
+	_generateEnvironment();
 	m_vctTmpCompiledNames = _generateCFile(sScript);
 
 	std::string sCPath = _getSrcFileCmdLine(m_vctTmpCompiledNames);
@@ -93,28 +98,75 @@ bool CppScript::compile(const std::string& sScript, std::string* result /*= NULL
 	unsigned long exitCode = 0;
 	std::string sResult;
 	std::string sOption = "/nologo /c /EHsc ";
+
 	sOption += sCPath.c_str();
 	sOption += " ";
 	sOption += getCompileOptionCmdLine().c_str();
 	sOption += " ";
 	sOption += getIncDirsCmdLine().c_str();
 	sOption += " ";
+	sOption += getTmpIncDirsCmdLine().c_str();
+	sOption += " ";
 	sOption += getDefinitionCmdLine().c_str();
+	sOption += " ";
+	sOption += getTmpDefinitionCmdLine().c_str();
 
 	if (!Communal::Execute(m_CompilePath.c_str(), sOption.c_str(), exitCode, &sResult))
 		return false;
 	if (result)
 		*result = sResult;
 	
-	std::string sResultFile = _getCurFileName().c_str();
+	std::string sResultFile = _getCurScriptName().c_str();
 	sResultFile += ".obj";
 	return Communal::IsPathExist(sResultFile.c_str());
+}
+
+bool CppScript::compile(const std::vector<std::string>& sCppFiles, std::string* result /*= NULL*/)
+{
+	WorkingDirScope _auto_dir(this);
+
+	++m_compileCount;
+	m_vctTmpDefinition.clear();
+	m_vctTmpIncDirs.clear();
+
+	_generateEnvironment();
+
+	m_vctTmpCompiledNames = sCppFiles;
+
+	std::string sCPath = _getSrcFileCmdLine(m_vctTmpCompiledNames);
+
+	unsigned long exitCode = 0;
+	std::string sResult;
+	std::string sOption = "/nologo /c /EHsc ";
+
+	sOption += sCPath.c_str();
+	sOption += " ";
+	sOption += getCompileOptionCmdLine().c_str();
+	sOption += " ";
+	sOption += getIncDirsCmdLine().c_str();
+	sOption += " ";
+	sOption += getTmpIncDirsCmdLine().c_str();
+	sOption += " ";
+	sOption += getDefinitionCmdLine().c_str();
+	sOption += " ";
+	sOption += getTmpDefinitionCmdLine().c_str();
+
+	if (!Communal::Execute(m_CompilePath.c_str(), sOption.c_str(), exitCode, &sResult))
+		return false;
+	if (result)
+		*result = sResult;
+
+	return true;
 }
 
 bool CppScript::compileInClosure(const std::string& sScript, std::string* result /*= NULL*/,
 	const std::vector<std::string>* vctIncludedFiles /*= NULL*/)
 {
 	std::string sCppCode;
+
+	sCppCode += "#include <";
+	sCppCode += COMMON_H_FILE;
+	sCppCode += ">\n";
 
 	if (vctIncludedFiles != NULL)
 	{
@@ -125,8 +177,10 @@ bool CppScript::compileInClosure(const std::string& sScript, std::string* result
 	}
 
 	sCppCode +=
-		"DECLARE_ENTRY(__innerEntry)\n"
-		"BOOL __innerEntry(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)\n"
+		"extern \"C\" BOOL WINAPI DllMain( \n"
+		"								 HMODULE hModule, \n"
+		"								 DWORD ul_reason_for_call, \n"
+		"								 LPVOID lpReserved) \n"
 		"{\n"
 		"	if (ul_reason_for_call == DLL_PROCESS_ATTACH)\n"
 		"	{\n";
@@ -144,18 +198,18 @@ bool CppScript::link(std::string* result /*= NULL*/)
 {
 	WorkingDirScope _auto_dir(this);
 
-	std::string sObjPath = _getObjFileCmdLine(m_vctTmpCompiledNames);
+	std::vector<std::string> vctObjFiles = _getObjFiles(m_vctTmpCompiledNames);
+	std::string sObjPath = _getObjFileCmdLine(vctObjFiles);
 	std::string sOut = "/OUT:\"";
 	sOut += _getOutFile().c_str();
 	sOut += "\"";
 
 	std::string sMachine =
 #ifdef _WIN64
-		"/MACHINE:X64"
+		"/MACHINE:X64";
 #else
-		"/MACHINE:X86"
+		"/MACHINE:X86";
 #endif
-		;
 
 	unsigned long exitCode = 0;
 	std::string sResult;
@@ -177,7 +231,7 @@ bool CppScript::link(std::string* result /*= NULL*/)
 	if (result)
 		*result = sResult;
 
-	std::string sResultFile = _getCurFileName().c_str();
+	std::string sResultFile = _getCurScriptName().c_str();
 	sResultFile += ".dll";	
 	return Communal::IsPathExist(sResultFile.c_str());
 }
@@ -205,16 +259,6 @@ std::vector<std::string> CppScript::getIncDirs()
 	return m_vctIncDirs;
 }
 
-void CppScript::addLibrary(const std::string& sLibPath)
-{
-	m_vctLibs.push_back(sLibPath);
-}
-
-std::vector<std::string> CppScript::getLibraries()
-{
-	return m_vctLibs;
-}
-
 std::string CppScript::getIncDirsCmdLine()
 {
 	std::string sCmdLine;
@@ -229,6 +273,49 @@ std::string CppScript::getIncDirsCmdLine()
 	}
 
 	return sCmdLine;
+}
+
+void CppScript::addTmpIncDir(const std::string& sDir)
+{
+	if (sDir.size() == 0)
+		return;
+	//目录不能以\或/结尾
+	std::string _sDir = sDir;
+	int nLen = (int)strlen(_sDir.c_str());
+	if (_sDir[nLen - 1] == '\\' || _sDir[nLen - 1] == '/')
+		_sDir[nLen - 1] = '\0';
+	m_vctTmpIncDirs.push_back(_sDir);
+}
+
+std::vector<std::string> CppScript::getTmpIncDirs()
+{
+	return m_vctTmpIncDirs;
+}
+
+std::string CppScript::getTmpIncDirsCmdLine()
+{
+	std::string sCmdLine;
+	for (int i = 0; i < (int)m_vctTmpIncDirs.size(); ++i)
+	{
+		if (!sCmdLine.empty())
+			sCmdLine += ' ';
+
+		sCmdLine += "/I \"";
+		sCmdLine += m_vctTmpIncDirs[i].c_str();
+		sCmdLine += "\"";
+	}
+
+	return sCmdLine;
+}
+
+void CppScript::addLibrary(const std::string& sLibPath)
+{
+	m_vctLibs.push_back(sLibPath);
+}
+
+std::vector<std::string> CppScript::getLibraries()
+{
+	return m_vctLibs;
 }
 
 std::string CppScript::getLibrariesCmdLine()
@@ -305,6 +392,32 @@ std::string CppScript::getDefinitionCmdLine()
 	return sCmdLine;
 }
 
+void CppScript::addTmpDefinition(const std::string& sDefinition)
+{
+	m_vctTmpDefinition.push_back(sDefinition);
+}
+
+std::vector<std::string> CppScript::getTmpDefinitions()
+{
+	return m_vctTmpDefinition;
+}
+
+std::string CppScript::getTmpDefinitionCmdLine()
+{
+	std::string sCmdLine;
+	for (int i = 0; i < (int)m_vctTmpDefinition.size(); ++i)
+	{
+		if (!sCmdLine.empty())
+			sCmdLine += ' ';
+
+		sCmdLine += "/D \"";
+		sCmdLine += m_vctTmpDefinition[i].c_str();
+		sCmdLine += "\"";
+	}
+
+	return sCmdLine;
+}
+
 std::string CppScript::getWorkingDir()
 {
 	if (m_workingDir.empty())
@@ -337,6 +450,7 @@ bool CppScript::setWorkingDir(const std::string& sDir)
 	{
 		Communal::SetWorkingDir(sOldDir.c_str());
 		m_workingDir = _dir.c_str();
+		
 		return true;
 	}
 	return false;
@@ -346,19 +460,7 @@ void CppScript::clean()
 {
 	WorkingDirScope _auto_dir(this);
 
-	std::string sTempName = _getMainID();
-
-	for (int i = 1; i <= m_compileCount; ++i)
-	{
-		std::vector<std::string> vctDirs;
-		std::vector<std::string> vctFiles;
-		Communal::ListFilesA(".", vctDirs, vctFiles, 
-			(sTempName + '-' + std::to_string(i) + ".*").c_str(), false, true);
-		for (int i = 0; i < (int)vctFiles.size(); ++i)
-		{
-			Communal::DelFile(vctFiles[i].c_str());
-		}
-	}
+	Communal::CleanFloder(".");
 }
 
 std::string CppScript::_getMainID()
@@ -369,14 +471,24 @@ std::string CppScript::_getMainID()
 	return m_ID;
 }
 
-std::string CppScript::_getCurFileName()
+std::string CppScript::_getCurScriptName()
 {
 	return _getMainID() + '-' + std::to_string(m_compileCount);
 }
 
-std::string CppScript::_generateIncludeFile()
+std::string CppScript::_generateEnvironment()
 {
-	const char* szHFileFormat =
+	std::string sScriptIdDef = "SCRIPT_ID=\\\"";
+	sScriptIdDef += _getCurScriptName().c_str();
+	sScriptIdDef += "\\\"";
+	addTmpDefinition(sScriptIdDef);
+
+	addTmpIncDir(Communal::GetWorkingDir());
+
+	if (_access(COMMON_H_FILE, 0) != -1)
+		return COMMON_H_FILE;
+
+	const char* szHFileText =
 		"#ifndef FUNC_API\n"
 		"#define FUNC_API extern \"C\" __declspec(dllexport)\n"
 		"#endif\n"
@@ -387,52 +499,38 @@ std::string CppScript::_generateIncludeFile()
 		"#define CLASS_API __declspec(dllexport)\n"
 		"#endif\n\n"
 		"#define WIN32_LEAN_AND_MEAN\n"
-		"#include <windows.h>\n"
-		"\n#define DECLARE_ENTRY(_EntryName) \\\n"
-		"	BOOL _EntryName(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved); \\\n"
-		"	class __has_declare_entry { public: __has_declare_entry(){ g_entry = _EntryName; } } g_has_declare_entry;\n"
-		"\n#define SCRIPT_ID \"%s\"";
-	char szHFileText[2048];
-	sprintf(szHFileText, szHFileFormat, _getCurFileName().c_str());
-	size_t nLen = strlen(szHFileText);
-	std::string sHFile = _getCurFileName() + ".h";
-	Communal::WriteFile(sHFile.c_str(), szHFileText, nLen, 0);
+		"#include <windows.h>\n\n"
 
-	return sHFile;
+		"\n#define DECLARE_ENTRY \\\n"
+		"	extern \"C\" BOOL WINAPI DllMain( \\\n"
+		"				 HMODULE hModule, \\\n"
+		"				 DWORD ul_reason_for_call, \\\n"
+		"				 LPVOID lpReserved) \\\n"
+		"	{ \\\n"
+		"		return TRUE; \\\n"
+		"	}";
+
+	size_t nLen = strlen(szHFileText);
+	Communal::WriteFile(COMMON_H_FILE, szHFileText, nLen, 0);
+
+	return COMMON_H_FILE;
 }
 
 //不带后缀
 std::vector<std::string> CppScript::_generateCFile(const std::string& sCode)
 {
-	std::string sTempFileName = _getCurFileName();
+	std::string sTempFileName = _getCurScriptName();
 
 	std::string sCppContent;
-
-	//写内部包含文件
-	std::string sInnerIncludeText;
-	sInnerIncludeText += "#include \"" + sTempFileName + ".h\"\n";
-	sCppContent += sInnerIncludeText.c_str();
-	sCppContent += '\n';
-
-	sCppContent += "typedef BOOL (*PFN_Entry)(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved);\n";
-	sCppContent += "PFN_Entry g_entry = NULL;\n\n";
-
+	
 	sCppContent += sCode.c_str();
 	sCppContent += '\n';
-
-	sCppContent += 
-		"extern \"C\" BOOL WINAPI DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)\n"
-		"{\n"
-		"	if (g_entry)\n"
-		"		return g_entry(hModule, ul_reason_for_call, lpReserved);\n"
-		"	return TRUE;\n"
-		"}\n";
 
 	size_t nLen = strlen(sCppContent.c_str());
 	std::string sCFile = sTempFileName + ".cpp";
 	Communal::WriteFile(sCFile.c_str(), sCppContent.c_str(), nLen, 0);
 
-	return { sTempFileName };
+	return { sCFile };
 }
 
 std::string CppScript::_getSrcFileCmdLine(const std::vector<std::string>& vctNames)
@@ -443,11 +541,41 @@ std::string CppScript::_getSrcFileCmdLine(const std::vector<std::string>& vctNam
 		if (!sCmdLine.empty())
 			sCmdLine += " ";
 		sCmdLine += '\"';
-		sCmdLine += vctNames[i] + ".cpp";
+		sCmdLine += vctNames[i];
 		sCmdLine += '\"';
 	}
 
 	return sCmdLine;
+}
+
+std::vector<std::string> CppScript::_getObjFiles(const std::vector<std::string>& vctNames)
+{
+	std::vector<std::string> vctObjFiles;
+	for (int i = 0; i < (int)vctNames.size(); ++i)
+	{
+		vctObjFiles.push_back(_getFileNameWithoutExt(vctNames[i]) + ".obj");
+	}
+
+	return vctObjFiles;
+}
+
+std::string CppScript::_getFileNameWithoutExt(const std::string& sFilePath)
+{
+	std::string sFileName;
+	size_t idxDir = sFilePath.find_last_of("/\\");
+	if (idxDir != std::string::npos)
+	{
+		sFileName = sFilePath.substr(idxDir + 1);
+	}
+	else
+	{
+		sFileName = sFilePath;
+	}
+
+	int nDotIdx = sFileName.find_last_of('.');
+	if (nDotIdx == std::string::npos)
+		return sFileName;
+	return sFileName.substr(0, nDotIdx);
 }
 
 std::string CppScript::_getObjFileCmdLine(const std::vector<std::string>& vctNames)
@@ -458,7 +586,7 @@ std::string CppScript::_getObjFileCmdLine(const std::vector<std::string>& vctNam
 		if (!sCmdLine.empty())
 			sCmdLine += " ";
 		sCmdLine += '\"';
-		sCmdLine += vctNames[i] + ".obj";
+		sCmdLine += vctNames[i];
 		sCmdLine += '\"';
 	}
 
@@ -467,14 +595,15 @@ std::string CppScript::_getObjFileCmdLine(const std::vector<std::string>& vctNam
 
 std::string CppScript::_getOutFile()
 {
-	return _getCurFileName() + ".dll";
+	return _getCurScriptName() + ".dll";
 }
-
 
 CppScript::WorkingDirScope::WorkingDirScope(CppScript* cs)
 {
 	m_sOriginalDir = Communal::GetWorkingDir();
-	Communal::SetWorkingDir(cs->getWorkingDir().c_str());
+
+	std::string sWorkingDir = cs->getWorkingDir().c_str();
+	Communal::SetWorkingDir(sWorkingDir.c_str());
 }
 
 CppScript::WorkingDirScope::WorkingDirScope(const char* dirSwitchTo)

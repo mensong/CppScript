@@ -105,6 +105,7 @@ public:
 	///compile
 	// sScript不能为不闭合的代码
 	bool compile(const std::string& sScript, std::string* result = NULL);
+	bool compile(const std::vector<std::string>& sCppFiles, std::string* result = NULL);
 
 	///compile in closure
 	// sScript可以为不闭合的代码，如:int n = 0; ++n;
@@ -121,13 +122,34 @@ public:
 	void clean();
 		
 protected:
+	///添加宏定义
+	void addTmpDefinition(const std::string& sDefinition);
+	///
+	std::vector<std::string> getTmpDefinitions();
+	///返回宏定义命令行
+	std::string getTmpDefinitionCmdLine();
+
+	///添加包含目录
+	// 如果为相对路径，则相对于WorkingDir
+	void addTmpIncDir(const std::string& sDir);
+	///
+	std::vector<std::string> getTmpIncDirs();
+	///返回include dirs的命令行
+	std::string getTmpIncDirsCmdLine();
+
+protected:
 	std::string _getMainID();//ID
-	std::string _getCurFileName();//临时文件名，不带后缀：_getMainID() + '-' + m_compileCount
-	std::string _generateIncludeFile();//创建头文件
+	std::string _getCurScriptName();//临时名，不带后缀：_getMainID() + '-' + m_compileCount
+	std::string _generateEnvironment();//创建头文件
 	std::vector<std::string> _generateCFile(const std::string& sCode);//创建源文件，返回不带cpp后缀名的列表
 	std::string _getSrcFileCmdLine(const std::vector<std::string>& vctNames);//获得源文件命令行
+	std::vector<std::string> _getObjFiles(const std::vector<std::string>& vctNames);
 	std::string _getObjFileCmdLine(const std::vector<std::string>& vctNames);//获得obj文件命令行
 	std::string _getOutFile();//获得输出文件名
+
+private:
+	//去掉路径后缀名
+	std::string _getFileNameWithoutExt(const std::string& sFilePath);
 
 private:
 	std::string m_CompilePath;
@@ -142,7 +164,10 @@ private:
 	std::string m_ID;
 	int m_compileCount;//每compile一次就递增1
 
+	std::vector<std::string> m_vctTmpDefinition;
+
 private:
 	std::vector<std::string> m_vctTmpCompiledNames;
+	std::vector<std::string> m_vctTmpIncDirs;
 };
 
