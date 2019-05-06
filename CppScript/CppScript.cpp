@@ -624,7 +624,7 @@ CppScript::Context::Context()
 
 }
 
-CppScript::Context::Context(unsigned long long hMod/* = NULL*/)
+CppScript::Context::Context(unsigned long long hMod)
 	: m_hMod(hMod)
 {
 	m_pRefCount = new int;
