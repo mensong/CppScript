@@ -617,6 +617,13 @@ CppScript::WorkingDirScope::~WorkingDirScope()
 	Communal::SetWorkingDir(m_sOriginalDir.c_str());
 }
 
+CppScript::Context::Context()
+	: m_pRefCount(NULL)
+	, m_hMod(NULL)
+{
+
+}
+
 CppScript::Context::Context(unsigned long long hMod/* = NULL*/)
 	: m_hMod(hMod)
 {
@@ -676,11 +683,13 @@ void CppScript::Context::_deRef()
 CppScript::Context& CppScript::Context::operator=(const Context& o)
 {
 	_deRef();
-
+	
 	m_pRefCount = o.m_pRefCount;
-	++(*m_pRefCount);
+	if (m_pRefCount)
+		++(*m_pRefCount);
 
 	m_hMod = o.m_hMod;
+
 	return *this;
 }
 

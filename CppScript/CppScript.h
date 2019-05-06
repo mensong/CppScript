@@ -9,7 +9,8 @@ public:
 	class Context
 	{
 	public:
-		Context(unsigned long long hMod = NULL);
+		Context();
+		Context(unsigned long long hMod);
 		~Context();
 		Context(const Context& o);
 		Context& operator=(const Context& o);
