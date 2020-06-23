@@ -501,14 +501,14 @@ std::string CppScript::_generateEnvironment()
 		"#define WIN32_LEAN_AND_MEAN\n"
 		"#include <windows.h>\n\n"
 
-		"\n#define DECLARE_ENTRY \\\n"
+		/*"\n#define DECLARE_ENTRY \\\n"
 		"	extern \"C\" BOOL WINAPI DllMain( \\\n"
 		"				 HMODULE hModule, \\\n"
 		"				 DWORD ul_reason_for_call, \\\n"
 		"				 LPVOID lpReserved) \\\n"
 		"	{ \\\n"
 		"		return TRUE; \\\n"
-		"	}";
+		"	}"*/;
 
 	size_t nLen = strlen(szHFileText);
 	Communal::WriteFile(COMMON_H_FILE, szHFileText, nLen, 0);
@@ -670,13 +670,25 @@ void CppScript::Context::_deRef()
 			*m_pRefCount = 0;
 			delete m_pRefCount;
 			m_pRefCount = NULL;
-			if (m_hMod)
-			{
-				//free hmodule
-				Communal::FreeLib(m_hMod);
-				m_hMod = NULL;
-			}
+			_final();
 		}
+	}
+}
+
+void CppScript::Context::_final()
+{
+	if (m_hMod)
+	{
+		
+		std::string sModPath = Communal::GetModulePath(m_hMod);
+		std::string sDir = Communal::GetDirFromPath(sModPath);
+
+		//free hmodule
+		Communal::FreeLib(m_hMod);
+		m_hMod = NULL;
+
+		//ÇåÀíÄ¿Â¼
+		Communal::CleanFloder(sDir.c_str());
 	}
 }
 

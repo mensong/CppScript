@@ -3,6 +3,13 @@
 #include "Communal.h"
 #include <assert.h>
 
+class MyClass//对应script里面的MyClass，需要在这里声明所有 script里面的MyClass的虚函数 ，并且虚函数的位置顺序要求一致
+{
+public:
+	virtual ~MyClass() = 0;
+	virtual void printTest() = 0;
+};
+
 int extFoo(int n)
 {
 	return n * 1000;
@@ -17,11 +24,8 @@ void main(int argc, char** argv)
 	}
 
 	CppScript cs;
-	
-	//在开始前最好清空临时目录，否则可能会有很多垃圾
-	Communal::CleanFloder("..\\..\\tmp");
 
-	//设置工作目录
+	//设置工作目录(最后为临时的目录，因为里面的内容会被清理掉)
 	cs.setWorkingDir("..\\..\\tmp");
 
 	//添加包含路径
@@ -76,13 +80,13 @@ void main(int argc, char** argv)
 
 	//compile
 	std::string sResult;
+	printf("==================COMPILE===============\n");
 #if 0
 	std::string sCpp = Communal::ReadText(argv[1]);
-	printf("==================%s===============\n", "COMPILE");
 	bool res = cs.compile(sCpp, &sResult);
 #elif 1
 	std::vector<std::string> cppFiles;
-	cppFiles.push_back("..\\test.cpp");
+	cppFiles.push_back("..\\testScript.cpp");
 	bool res = cs.compile(cppFiles, &sResult);
 #else
 	bool res = cs.compileInClosure("MessageBoxA(NULL, \"compileInClosure\", SCRIPT_ID, 0);", &sResult);
@@ -96,7 +100,7 @@ void main(int argc, char** argv)
 	}
 
 	//link
-	printf("==================%s===============\n", "LINK");
+	printf("===================LINK=================\n");
 	res = cs.link(&sResult);
 	printf(sResult.c_str());
 	if (!res)
@@ -105,54 +109,51 @@ void main(int argc, char** argv)
 		cs.clean();
 		return;
 	}
-
-	//使用
-	printf("==================%s===============\n", "USE");
+	
 	{//使用
 		CppScript::Context ct = cs.eval();
 
-		printf("==================%d===============\n", 1);
-
+		printf("================列出脚本中所有的导出===============\n");
 		std::vector<std::string> vctNames;
 		ct.getNames(vctNames);
 		for (int i = 0; i < vctNames.size(); ++i)
 		{
 			void* p = ct.getAddress(vctNames[i]);
-			printf("%s:%llu\n", vctNames[i].c_str(), (unsigned long long)p);
+			printf("%s:0x%p\n", vctNames[i].c_str(), p);
 			assert(p);
 		}
 
-		printf("==================%d===============\n", 2);
-
+		printf("================测试读取脚本中的变量===============\n");
 		//取script的数据
 		int* pMyData = (int *)ct.getAddress("myData");
 		DWORD err = GetLastError();
 		if (pMyData)
-			printf("%d\n", *pMyData);
+			printf("Data in script: %d\n", *pMyData);
 
-		printf("==================%d===============\n", 3);
-
+		printf("=================把C中的函数传给脚本===============\n");
 		//把函数给script使用
 		typedef int(*PFN_extFoo)(int n);
 		PFN_extFoo* pPFN = (PFN_extFoo*)ct.getAddress("pfnExtFoo");
 		if (pPFN)
 			*pPFN = extFoo;
 
-		printf("==================%d===============\n", 4);
-
+		printf("================== 调用脚本中的函数 ===============\n");
 		//调用script的函数
 		typedef void(*PFN_printTest)();
 		PFN_printTest pfnPrintTest = (PFN_printTest)ct.getAddress("printTest");
 		if (pfnPrintTest)
 			pfnPrintTest();
 
-		printf("==================%d===============\n", 5);
+		printf("================== 调用脚本中的类 =================\n");
+		typedef MyClass* (*PFN_create_MyClass)(/*构造函数参数*/);
+		PFN_create_MyClass create_MyClass = (PFN_create_MyClass)ct.getAddress("create_MyClass");
+		if (create_MyClass)
+		{
+			MyClass* pMyClass = create_MyClass();
+			if (pMyClass)
+				pMyClass->printTest();
+		}
 	}
 
 	system("pause");
-
-	//清理
-	printf("==================%s===============\n", "CLEAN");
-	//清理临时文件
-	cs.clean();
 }

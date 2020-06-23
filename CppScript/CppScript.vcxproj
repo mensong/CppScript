@@ -150,7 +150,7 @@
     <ClInclude Include="CppScript.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\test.cpp">
+    <ClCompile Include="..\testScript.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

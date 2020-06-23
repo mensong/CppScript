@@ -26,6 +26,7 @@ public:
 
 	protected:
 		void _deRef();
+		void _final();
 
 	private:
 		int* m_pRefCount;
