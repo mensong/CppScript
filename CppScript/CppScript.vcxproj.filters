@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="test">
+      <UniqueIdentifier>{5d307399-3739-4591-a25e-b574cf46e34e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CppScript.h">
@@ -20,6 +23,9 @@
     </ClInclude>
     <ClInclude Include="Communal.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\subScript.h">
+      <Filter>test</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -33,7 +39,10 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="..\testScript.cpp">
-      <Filter>源文件</Filter>
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\subScript.cpp">
+      <Filter>test</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

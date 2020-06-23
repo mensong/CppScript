@@ -79,19 +79,20 @@ void main(int argc, char** argv)
 #endif
 
 	//compile
-	std::string sResult;
 	printf("==================COMPILE===============\n");
+	std::string sCompileResult;
 #if 0
 	std::string sCpp = Communal::ReadText(argv[1]);
-	bool res = cs.compile(sCpp, &sResult);
+	bool res = cs.compile(sCpp, &sCompileResult);
 #elif 1
 	std::vector<std::string> cppFiles;
 	cppFiles.push_back("..\\testScript.cpp");
-	bool res = cs.compile(cppFiles, &sResult);
+	cppFiles.push_back("..\\subScript.cpp");
+	bool res = cs.compile(cppFiles, &sCompileResult);
 #else
-	bool res = cs.compileInClosure("MessageBoxA(NULL, \"compileInClosure\", SCRIPT_ID, 0);", &sResult);
+	bool res = cs.compileInClosure("MessageBoxA(NULL, \"compileInClosure\", SCRIPT_ID, 0);", &sCompileResult);
 #endif
-	printf(sResult.c_str());
+	printf(sCompileResult.c_str());
 	if (!res)
 	{
 		system("pause");
@@ -101,8 +102,9 @@ void main(int argc, char** argv)
 
 	//link
 	printf("===================LINK=================\n");
-	res = cs.link(&sResult);
-	printf(sResult.c_str());
+	std::string sLinkResult;
+	res = cs.link(&sLinkResult);
+	printf(sLinkResult.c_str());
 	if (!res)
 	{
 		system("pause");
@@ -110,9 +112,12 @@ void main(int argc, char** argv)
 		return;
 	}
 	
+	std::string fileName;
 	{//使用
 		CppScript::Context ct = cs.eval();
-
+		fileName = ct.getFileName();
+		ct.markClean(false);//标志结束后 不 清理文件夹
+		
 		printf("================列出脚本中所有的导出===============\n");
 		std::vector<std::string> vctNames;
 		ct.getNames(vctNames);
@@ -154,6 +159,56 @@ void main(int argc, char** argv)
 				pMyClass->printTest();
 		}
 	}
+
+	//直接从文件加载
+	{
+		printf("\n\n================   直接从文件加载   ===============\n");
+		CppScript::Context ct2(fileName);
+		ct2.markClean(true);//标志结束后清理文件夹
+		if (ct2.isValid())
+		{
+			printf("================列出脚本中所有的导出===============\n");
+			std::vector<std::string> vctNames;
+			ct2.getNames(vctNames);
+			for (int i = 0; i < vctNames.size(); ++i)
+			{
+				void* p = ct2.getAddress(vctNames[i]);
+				printf("%s:0x%p\n", vctNames[i].c_str(), p);
+				assert(p);
+			}
+
+			printf("================测试读取脚本中的变量===============\n");
+			//取script的数据
+			int* pMyData = (int *)ct2.getAddress("myData");
+			DWORD err = GetLastError();
+			if (pMyData)
+				printf("Data in script: %d\n", *pMyData);
+
+			printf("=================把C中的函数传给脚本===============\n");
+			//把函数给script使用
+			typedef int(*PFN_extFoo)(int n);
+			PFN_extFoo* pPFN = (PFN_extFoo*)ct2.getAddress("pfnExtFoo");
+			if (pPFN)
+				*pPFN = extFoo;
+
+			printf("================== 调用脚本中的函数 ===============\n");
+			//调用script的函数
+			typedef void(*PFN_printTest)();
+			PFN_printTest pfnPrintTest = (PFN_printTest)ct2.getAddress("printTest");
+			if (pfnPrintTest)
+				pfnPrintTest();
+
+			printf("================== 调用脚本中的类 =================\n");
+			typedef MyClass* (*PFN_create_MyClass)(/*构造函数参数*/);
+			PFN_create_MyClass create_MyClass = (PFN_create_MyClass)ct2.getAddress("create_MyClass");
+			if (create_MyClass)
+			{
+				MyClass* pMyClass = create_MyClass();
+				if (pMyClass)
+					pMyClass->printTest();
+			}
+		}
+	}	
 
 	system("pause");
 }

@@ -2,6 +2,7 @@
 #include "CPP_COM.H"
 #include <iostream>
 #include <string>
+#include "subScript.h"
 
 //用于接收 宿主给script使用的函数
 typedef int(*PFN_extFoo)(int n);
@@ -12,10 +13,10 @@ FUNC_API void printTest()
 {
 	if (pfnExtFoo)
 	{
-
 		int n = pfnExtFoo(123);
 		std::cout << "compute use C function():" << std::to_string((long long)n) << std::endl;
 	}
+	subfoo1("test sub script foo.");
 }
 
 //导出一个数据给宿主使用

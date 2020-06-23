@@ -620,12 +620,14 @@ CppScript::WorkingDirScope::~WorkingDirScope()
 CppScript::Context::Context()
 	: m_pRefCount(NULL)
 	, m_hMod(NULL)
+	, m_cleanAfter(true)
 {
 
 }
 
 CppScript::Context::Context(unsigned long long hMod)
 	: m_hMod(hMod)
+	, m_cleanAfter(true)
 {
 	m_pRefCount = new int;
 	*m_pRefCount = 1;
@@ -636,6 +638,22 @@ CppScript::Context::Context(const Context& o)
 	, m_hMod(NULL)
 {
 	*this = o;
+}
+
+CppScript::Context::Context(const std::string& sModFile)
+{
+	m_hMod = Communal::LoadLib(sModFile.c_str());
+	if (m_hMod)
+	{
+		m_pRefCount = new int;
+		*m_pRefCount = 1;
+	}
+	else
+	{
+		m_pRefCount = NULL;
+	}
+
+	m_cleanAfter = false;
 }
 
 bool CppScript::Context::isValid()
@@ -659,6 +677,19 @@ bool CppScript::Context::getNames(std::vector<std::string>& outNames)
 	return Communal::GetExportNames(Communal::GetModulePath(m_hMod).c_str(), outNames);
 }
 
+void CppScript::Context::markClean(bool bClean)
+{
+	m_cleanAfter = bClean;
+}
+
+std::string CppScript::Context::getFileName()
+{
+	if (!m_hMod)
+		return "";
+
+	return Communal::GetModulePath(m_hMod);
+}
+
 void CppScript::Context::_deRef()
 {
 	if (m_pRefCount)
@@ -679,16 +710,22 @@ void CppScript::Context::_final()
 {
 	if (m_hMod)
 	{
+		std::string sDir;
+		if (m_cleanAfter)
+		{
+			std::string sModPath = Communal::GetModulePath(m_hMod);
+			sDir = Communal::GetDirFromPath(sModPath);
+		}
 		
-		std::string sModPath = Communal::GetModulePath(m_hMod);
-		std::string sDir = Communal::GetDirFromPath(sModPath);
-
 		//free hmodule
 		Communal::FreeLib(m_hMod);
 		m_hMod = NULL;
 
-		//清理目录
-		Communal::CleanFloder(sDir.c_str());
+		if (!sDir.empty())
+		{
+			//清理目录
+			Communal::CleanFloder(sDir.c_str());
+		}
 	}
 }
 
@@ -701,6 +738,7 @@ CppScript::Context& CppScript::Context::operator=(const Context& o)
 		++(*m_pRefCount);
 
 	m_hMod = o.m_hMod;
+	m_cleanAfter = o.m_cleanAfter;
 
 	return *this;
 }

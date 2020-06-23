@@ -11,6 +11,7 @@ public:
 	public:
 		Context();
 		Context(unsigned long long hMod);
+		Context(const std::string& sModFile);
 		~Context();
 		Context(const Context& o);
 		Context& operator=(const Context& o);
@@ -24,6 +25,11 @@ public:
 		///获得所有导出的名称
 		bool getNames(std::vector<std::string>& outNames);
 
+		///设置自动清理
+		void markClean(bool bClean);
+
+		std::string getFileName();
+
 	protected:
 		void _deRef();
 		void _final();
@@ -31,7 +37,7 @@ public:
 	private:
 		int* m_pRefCount;
 		unsigned long long m_hMod;
-		std::string m_name;
+		bool m_cleanAfter;
 	};
 
 	class WorkingDirScope
