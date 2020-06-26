@@ -17,5 +17,5 @@
 
 主程序：[main.cpp](https://github.com/gergul/CppScript/blob/master/CppScript/main.cpp)
 
-脚本：[test.cpp](https://github.com/gergul/CppScript/blob/master/test.cpp)
+脚本：[testScript.cpp](https://github.com/gergul/CppScript/blob/master/testScript.cpp)
 	
