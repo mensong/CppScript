@@ -29,20 +29,24 @@ public:
 	{
 
 	}
+
+	//˳λ1
 	virtual ~MyClass()
 	{
 
 	}
 
-	void _printTest()
+	//˳λ2
+	virtual double foo(double d)
 	{
-		std::cout << "MyClass::_printTest()" << std::endl;
+		std::cout << "MyClass::foo()" << std::endl;
+		return d * 1000;
 	}
 
+	//˳λ3
 	virtual void printTest()
 	{
 		std::cout << "MyClass::printTest()" << std::endl;
-		_printTest();
 	}
 	
 };

@@ -116,7 +116,7 @@ bool CppScript::compile(const std::string& sScript, std::string* result /*= NULL
 	if (result)
 		*result = sResult;
 	
-	std::string sResultFile = _getCurScriptName().c_str();
+	std::string sResultFile = _getCurScriptId().c_str();
 	sResultFile += ".obj";
 	return Communal::IsPathExist(sResultFile.c_str());
 }
@@ -231,7 +231,7 @@ bool CppScript::link(std::string* result /*= NULL*/)
 	if (result)
 		*result = sResult;
 
-	std::string sResultFile = _getCurScriptName().c_str();
+	std::string sResultFile = _getCurScriptId().c_str();
 	sResultFile += ".dll";	
 	return Communal::IsPathExist(sResultFile.c_str());
 }
@@ -240,6 +240,11 @@ CppScript::Context CppScript::eval()
 {
 	WorkingDirScope _auto_dir(this);
 	return CppScript::Context(Communal::LoadLib(_getOutFile().c_str()));
+}
+
+std::string CppScript::GetScriptId()
+{
+	return _getCurScriptId();
 }
 
 void CppScript::addIncDir(const std::string& sDir)
@@ -471,7 +476,7 @@ std::string CppScript::_getMainID()
 	return m_ID;
 }
 
-std::string CppScript::_getCurScriptName()
+std::string CppScript::_getCurScriptId()
 {
 	return _getMainID() + '-' + std::to_string(m_compileCount);
 }
@@ -479,7 +484,7 @@ std::string CppScript::_getCurScriptName()
 std::string CppScript::_generateEnvironment()
 {
 	std::string sScriptIdDef = "SCRIPT_ID=\\\"";
-	sScriptIdDef += _getCurScriptName().c_str();
+	sScriptIdDef += _getCurScriptId().c_str();
 	sScriptIdDef += "\\\"";
 	addTmpDefinition(sScriptIdDef);
 
@@ -511,7 +516,7 @@ std::string CppScript::_generateEnvironment()
 //²»´øºó×º
 std::vector<std::string> CppScript::_generateCFile(const std::string& sCode)
 {
-	std::string sTempFileName = _getCurScriptName();
+	std::string sTempFileName = _getCurScriptId();
 
 	std::string sCppContent;
 	
@@ -587,7 +592,7 @@ std::string CppScript::_getObjFileCmdLine(const std::vector<std::string>& vctNam
 
 std::string CppScript::_getOutFile()
 {
-	return _getCurScriptName() + ".dll";
+	return _getCurScriptId() + ".dll";
 }
 
 CppScript::WorkingDirScope::WorkingDirScope(CppScript* cs)

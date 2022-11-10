@@ -5,12 +5,17 @@
 
 ///对应script里面的MyClass
 // 需要在这里声明所有 script里面的MyClass的虚函数
-// 并且虚函数的位置顺序要求一致
+// 注意：虚函数的位置顺序要求一致
 class MyClass
 {
 public:
+	//顺位1
 	virtual ~MyClass() = 0;
+	//顺位2
+	virtual double foo(double d) = 0;
+	//顺位3
 	virtual void printTest() = 0;
+	
 };
 
 int extFoo(int n)
@@ -171,7 +176,10 @@ void main(int argc, char** argv)
 		{
 			MyClass* pMyClass = create_MyClass();
 			if (pMyClass)
+			{
 				pMyClass->printTest();
+				double fooRes = pMyClass->foo(123.456);
+			}
 		}
 	}
 
@@ -220,7 +228,10 @@ void main(int argc, char** argv)
 			{
 				MyClass* pMyClass = create_MyClass();
 				if (pMyClass)
+				{
 					pMyClass->printTest();
+					double fooRes = pMyClass->foo(123.456);
+				}
 			}
 		}
 	}	

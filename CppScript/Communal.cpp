@@ -457,13 +457,13 @@ bool Communal::GetExportNames(const char* dllPath, std::vector<std::string>& out
 	{
 		//导出表首址。函数名称表首地址每个DWORD代表一个函数名字字符串的地址
 		PDWORD nameAddr = (PDWORD)ImageRvaToVax(pNtHeader, mod_base, pExportDesc->AddressOfNames, 0);
-		char* func_name = (char*)ImageRvaToVax(pNtHeader, mod_base, (DWORD)nameAddr[0], 0);
 		DWORD i = 0;
 		DWORD unti = pExportDesc->NumberOfNames;
 		for (i = 0; i < unti; i++)
 		{
-			outExportNames.push_back(func_name);
-			func_name = (char*)ImageRvaToVax(pNtHeader, mod_base, (DWORD)nameAddr[i], 0);
+			const char* func_name = (const char*)ImageRvaToVax(pNtHeader, mod_base, (DWORD)nameAddr[i], 0);
+			if (func_name)
+				outExportNames.push_back(func_name);			
 		}
 	}
 
