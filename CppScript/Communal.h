@@ -24,7 +24,7 @@ public:
 	static bool CpyFile(const char* srcPath, const char* dstPath);
 	static bool CpyFloder(const char* srcDir, const char* dstDir);
 	static bool Rename(const char* srcFileName, const char* dstFileName);
-	static std::string GetDirFromPath(std::string path);
+	static std::string GetRootDirFromPath(std::string path);
 	static bool CleanFloder(const char* dir);
 	static bool MakeFloder(const char* dir);
 	static void RemoveDir(const char* dirPath);

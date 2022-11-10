@@ -44,20 +44,20 @@ bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& e
 		return false;
 	}
 
-	int nCmdLen = 0;
+	size_t nCmdLen = 0;
 	if (szParam)
 		nCmdLen = (strlen(szFile) + strlen(szParam) + 4) * sizeof(char);
 	else
 		nCmdLen = (strlen(szFile) + 4) * sizeof(char);
 	char* szCmd = (char*)_alloca(nCmdLen);//_alloca在栈上申请的，会自动释放
 	memset(szCmd, 0, nCmdLen);
-	strcpy(szCmd, "\"");
-	strcat(szCmd, szFile);
-	strcat(szCmd, "\"");
+	strcpy_s(szCmd, nCmdLen, "\"");
+	strcat_s(szCmd, nCmdLen, szFile);
+	strcat_s(szCmd, nCmdLen, "\"");
 	if (szParam)
 	{
-		strcat(szCmd, " ");
-		strcat(szCmd, szParam);
+		strcat_s(szCmd, nCmdLen, " ");
+		strcat_s(szCmd, nCmdLen, szParam);
 	}
 
 	//设置命令行进程启动信息(以隐藏方式启动命令并定位其输出到hWrite)
@@ -125,16 +125,16 @@ size_t Communal::WriteFile(const char * path, const char * writeContent, size_t 
 	}
 
 	FILE *f = NULL;
-	if ((f = fopen(path, "rb+")) == NULL)
+	if (fopen_s(&f, path, "rb+") != 0)
 	{
 		//文件不存在，则新建一个空的
-		if ((f = fopen(path, "wb")) == NULL)
+		if (fopen_s(&f, path, "wb") != 0)
 		{
 			return -1;
 		}
 		fclose(f);
 
-		if ((f = fopen(path, "rb+")) == NULL)
+		if (fopen_s(&f, path, "rb+") != 0)
 			return -1;
 	}
 
@@ -187,7 +187,7 @@ size_t Communal::WriteFile(const char * path, const char * writeContent, size_t 
 				//删除原有的文件，新建一个空的
 				fclose(f);
 				remove(path);
-				if ((f = fopen(path, "wb")) == NULL)
+				if (fopen_s(&f, path, "wb") != 0)
 				{
 					return -1;
 				}
@@ -241,8 +241,7 @@ std::string Communal::ReadText(const char * path)
 
 	std::string sRet;
 
-	f = fopen(path, "rb");
-	if (!f)
+	if (fopen_s(&f, path, "rb") != 0)
 	{
 		return "";
 	}
@@ -388,7 +387,7 @@ bool Communal::DelFile(const char* pFilePath)
 
 bool Communal::DelFloder(const char* pDirPath)
 {
-	return rmdir(pDirPath) == 0;
+	return _rmdir(pDirPath) == 0;
 }
 
 bool Communal::IsPathExist(const char* path)
@@ -484,14 +483,14 @@ bool Communal::CpyFile(const char* srcPath, const char* dstPath)
 bool Communal::CpyFloder(const char* srcDir, const char* dstDir)
 {
 	char szSrcPath[MAX_PATH];//源文件路径
-	int nLen = strlen(srcDir);
-	strcpy(szSrcPath, srcDir);
+	size_t nLen = strlen(srcDir);
+	strcpy_s(szSrcPath, MAX_PATH, srcDir);
 	szSrcPath[nLen] = '\0';//必须要以“\0\0”结尾，不然删除不了
 	szSrcPath[nLen + 1] = '\0';
 
 	char szDstPath[MAX_PATH];
 	nLen = strlen(dstDir);
-	strcpy(szDstPath, dstDir);
+	strcpy_s(szDstPath, MAX_PATH, dstDir);
 	szDstPath[nLen] = '\0';
 	szDstPath[nLen + 1] = '\0';
 
@@ -517,10 +516,10 @@ bool Communal::Rename(const char* srcFileName, const char* dstFileName)
 	return 0 == rename(srcFileName, dstFileName);
 }
 
-std::string Communal::GetDirFromPath(std::string path)
+std::string Communal::GetRootDirFromPath(std::string path)
 {
-	int nLen = strlen(path.c_str());
-	while (path.size() > 0 && (path[nLen - 1] == '\\' || path[nLen - 1] == '/'))
+	size_t nLen = strlen(path.c_str());
+	while (nLen > 0 && (path[nLen - 1] == '\\' || path[nLen - 1] == '/'))
 	{
 		path[nLen - 1] = '\0';
 		nLen = strlen(path.c_str());

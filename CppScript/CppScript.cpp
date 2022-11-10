@@ -2,7 +2,7 @@
 #include "Communal.h"
 #include <io.h>
 
-#define COMMON_H_FILE "CPP_COM.H"
+#define COMMON_H_FILE "CPP_SCRIPT.H"
 
 CppScript::CppScript()
 	: m_compileCount(0)
@@ -500,15 +500,7 @@ std::string CppScript::_generateEnvironment()
 		"#endif\n\n"
 		"#define WIN32_LEAN_AND_MEAN\n"
 		"#include <windows.h>\n\n"
-
-		/*"\n#define DECLARE_ENTRY \\\n"
-		"	extern \"C\" BOOL WINAPI DllMain( \\\n"
-		"				 HMODULE hModule, \\\n"
-		"				 DWORD ul_reason_for_call, \\\n"
-		"				 LPVOID lpReserved) \\\n"
-		"	{ \\\n"
-		"		return TRUE; \\\n"
-		"	}"*/;
+		;
 
 	size_t nLen = strlen(szHFileText);
 	Communal::WriteFile(COMMON_H_FILE, szHFileText, nLen, 0);
@@ -572,7 +564,7 @@ std::string CppScript::_getFileNameWithoutExt(const std::string& sFilePath)
 		sFileName = sFilePath;
 	}
 
-	int nDotIdx = sFileName.find_last_of('.');
+	size_t nDotIdx = sFileName.find_last_of('.');
 	if (nDotIdx == std::string::npos)
 		return sFileName;
 	return sFileName.substr(0, nDotIdx);
@@ -710,21 +702,19 @@ void CppScript::Context::_final()
 {
 	if (m_hMod)
 	{
-		std::string sDir;
-		if (m_cleanAfter)
-		{
-			std::string sModPath = Communal::GetModulePath(m_hMod);
-			sDir = Communal::GetDirFromPath(sModPath);
-		}
+		
 		
 		//free hmodule
 		Communal::FreeLib(m_hMod);
 		m_hMod = NULL;
 
-		if (!sDir.empty())
+		//清理目录
+		if (m_cleanAfter)
 		{
-			//清理目录
-			Communal::CleanFloder(sDir.c_str());
+			std::string sModPath = Communal::GetModulePath(m_hMod);
+			std::string sDir = Communal::GetRootDirFromPath(sModPath);
+			if (!sDir.empty())
+				Communal::CleanFloder(sDir.c_str());
 		}
 	}
 }

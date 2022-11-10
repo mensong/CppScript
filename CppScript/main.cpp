@@ -3,7 +3,10 @@
 #include "Communal.h"
 #include <assert.h>
 
-class MyClass//对应script里面的MyClass，需要在这里声明所有 script里面的MyClass的虚函数 ，并且虚函数的位置顺序要求一致
+///对应script里面的MyClass
+// 需要在这里声明所有 script里面的MyClass的虚函数
+// 并且虚函数的位置顺序要求一致
+class MyClass
 {
 public:
 	virtual ~MyClass() = 0;
@@ -17,15 +20,9 @@ int extFoo(int n)
 
 void main(int argc, char** argv)
 {
-	if (argc != 2)
-	{
-		printf("CppScript.exe scriptfile\n");
-		return;
-	}
-
 	CppScript cs;
 
-	//设置工作目录(最后为临时的目录，因为里面的内容会被清理掉)
+	//设置工作目录(临时的目录，里面的内容会被清理掉)
 	cs.setWorkingDir("..\\..\\tmp");
 
 	//添加包含路径
@@ -78,30 +75,46 @@ void main(int argc, char** argv)
 	cs.addLinkOption("/VERBOSE:Lib");
 #endif
 
+
 	//compile
 	printf("==================COMPILE===============\n");
+	bool res = false;
 	std::string sCompileResult;
-#if 0
-	std::string sCpp = Communal::ReadText(argv[1]);
-	bool res = cs.compile(sCpp, &sCompileResult);
-#elif 1
-	std::vector<std::string> cppFiles;
-	cppFiles.push_back("..\\testScript.cpp");
-	cppFiles.push_back("..\\subScript.cpp");
-	bool res = cs.compile(cppFiles, &sCompileResult);
-#else
-	bool res = cs.compileInClosure("MessageBoxA(NULL, \"compileInClosure\", SCRIPT_ID, 0);", &sCompileResult);
-#endif
+	if (argc == 2)
+	{
+		std::string sCpp = Communal::ReadText(argv[1]);
+		if (!sCpp.empty())
+		{
+			res = cs.compile(sCpp, &sCompileResult);			
+		}
+		else
+		{
+			//测试纯脚本代码
+			res = cs.compileInClosure("MessageBoxA(NULL, \"compileInClosure\", SCRIPT_ID, 0);", &sCompileResult);
+		}
+	}
+	else
+	{
+		//测试文件
+		std::vector<std::string> cppFiles;
+		cppFiles.push_back("..\\testScript.cpp");
+		cppFiles.push_back("..\\subScript.cpp");
+		res = cs.compile(cppFiles, &sCompileResult);
+	}
+
 	printf(sCompileResult.c_str());
+
 	if (!res)
 	{
+		printf("COMPILE出错\n");
 		system("pause");
 		cs.clean();
 		return;
 	}
 
+
 	//link
-	printf("===================LINK=================\n");
+	printf("\n===================LINK=================\n");
 	std::string sLinkResult;
 	res = cs.link(&sLinkResult);
 	printf(sLinkResult.c_str());
@@ -112,6 +125,8 @@ void main(int argc, char** argv)
 		return;
 	}
 	
+
+
 	std::string fileName;
 	{//使用
 		CppScript::Context ct = cs.eval();

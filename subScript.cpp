@@ -1,4 +1,4 @@
-#include "CPP_COM.H"
+#include "CPP_SCRIPT.H"
 #include "subScript.h"
 #include <iostream>
 
