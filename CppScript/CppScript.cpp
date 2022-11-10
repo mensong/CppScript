@@ -702,8 +702,6 @@ void CppScript::Context::_final()
 {
 	if (m_hMod)
 	{
-		
-		
 		//free hmodule
 		Communal::FreeLib(m_hMod);
 		m_hMod = NULL;
