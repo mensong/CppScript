@@ -36,7 +36,7 @@ unsigned __stdcall _Execute_readAndWrite(void* arg)
 	return 0;
 }
 
-bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& exitCode, std::string* sPrintText/* = NULL*/, unsigned long timeout/* = 0*/)
+bool Communal::Execute(const char* szFile, const char* szParam, int* exitCode/* = NULL*/, std::string* sPrintText/* = NULL*/, unsigned long timeout/* = 0*/)
 {
 	if ((!szFile || szFile[0] == '\0') && (!szParam || szParam[0] == '\0'))
 		return false;
@@ -94,8 +94,9 @@ bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& e
 		TerminateProcess(pi.hProcess, 1);
 		bRet = false;
 		break;
-	case WAIT_OBJECT_0:		
-		GetExitCodeProcess(pi.hProcess, &exitCode);//获得返回值
+	case WAIT_OBJECT_0:
+		if (exitCode)
+			GetExitCodeProcess(pi.hProcess, (LPDWORD)exitCode);//获得返回值
 		bRet = true;
 		break;
 	}

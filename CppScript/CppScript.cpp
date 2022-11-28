@@ -95,7 +95,7 @@ bool CppScript::compile(const std::string& sScript, std::string* result /*= NULL
 
 	std::string sCPath = _getSrcFileCmdLine(m_vctTmpCompiledNames);
 
-	unsigned long exitCode = 0;
+	int exitCode = 0;
 	std::string sResult;
 	std::string sOption = "/nologo /c /EHsc ";
 
@@ -111,7 +111,7 @@ bool CppScript::compile(const std::string& sScript, std::string* result /*= NULL
 	sOption += " ";
 	sOption += getTmpDefinitionCmdLine().c_str();
 
-	if (!Communal::Execute(m_CompilePath.c_str(), sOption.c_str(), exitCode, &sResult))
+	if (!Communal::Execute(m_CompilePath.c_str(), sOption.c_str(), &exitCode, &sResult))
 		return false;
 	if (result)
 		*result = sResult;
@@ -135,7 +135,7 @@ bool CppScript::compile(const std::vector<std::string>& sCppFiles, std::string* 
 
 	std::string sCPath = _getSrcFileCmdLine(m_vctTmpCompiledNames);
 
-	unsigned long exitCode = 0;
+	int exitCode = 0;
 	std::string sResult;
 	std::string sOption = "/nologo /c /EHsc ";
 
@@ -151,7 +151,7 @@ bool CppScript::compile(const std::vector<std::string>& sCppFiles, std::string* 
 	sOption += " ";
 	sOption += getTmpDefinitionCmdLine().c_str();
 
-	if (!Communal::Execute(m_CompilePath.c_str(), sOption.c_str(), exitCode, &sResult))
+	if (!Communal::Execute(m_CompilePath.c_str(), sOption.c_str(), &exitCode, &sResult))
 		return false;
 	if (result)
 		*result = sResult;
@@ -211,7 +211,7 @@ bool CppScript::link(std::string* result /*= NULL*/)
 		"/MACHINE:X86";
 #endif
 
-	unsigned long exitCode = 0;
+	int exitCode = 0;
 	std::string sResult;
 	std::string sOption = "/nologo /DLL ";
 	sOption += sMachine.c_str();
@@ -226,7 +226,7 @@ bool CppScript::link(std::string* result /*= NULL*/)
 	sOption += ' ';
 	sOption += getLibrariesCmdLine();
 	
-	if (!Communal::Execute(m_LinkPath.c_str(), sOption.c_str(), exitCode, &sResult))
+	if (!Communal::Execute(m_LinkPath.c_str(), sOption.c_str(), &exitCode, &sResult))
 		return false;
 	if (result)
 		*result = sResult;
