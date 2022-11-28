@@ -3,16 +3,21 @@
 #include <windows.h>
 #include <io.h>
 #include <process.h>
-#include <tuple>
 #include <direct.h>
 
+struct _Execute_readAndWrite_Struct
+{
+	HANDLE hRead;
+	std::string* sPrintText;
+	HANDLE hEvent;
+};
 
 unsigned __stdcall _Execute_readAndWrite(void* arg)
 {
-	std::tuple<HANDLE, std::string*, HANDLE>* tpParams = (std::tuple<HANDLE, std::string*, HANDLE>*)arg;
-	HANDLE hRead = std::get<0>(*tpParams);
-	std::string* sPrintText = std::get<1>(*tpParams);
-	HANDLE ev = std::get<2>(*tpParams);
+	struct _Execute_readAndWrite_Struct* tpParams = (struct _Execute_readAndWrite_Struct*)arg;
+	HANDLE hRead = tpParams->hRead;
+	std::string* sPrintText = tpParams->sPrintText;
+	HANDLE ev = tpParams->hEvent;
 
 	//读取命令行返回值
 	char buff[1024 + 1];
@@ -33,7 +38,7 @@ unsigned __stdcall _Execute_readAndWrite(void* arg)
 
 bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& exitCode, std::string* sPrintText/* = NULL*/, unsigned long timeout/* = 0*/)
 {
-	if (!szFile || szFile[0] == '\0')
+	if ((!szFile || szFile[0] == '\0') && (!szParam || szParam[0] == '\0'))
 		return false;
 
 	HANDLE hRead, hWrite;
@@ -42,22 +47,6 @@ bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& e
 	if (!CreatePipe(&hRead, &hWrite, &sa, 0))
 	{
 		return false;
-	}
-
-	size_t nCmdLen = 0;
-	if (szParam)
-		nCmdLen = (strlen(szFile) + strlen(szParam) + 4) * sizeof(char);
-	else
-		nCmdLen = (strlen(szFile) + 4) * sizeof(char);
-	char* szCmd = (char*)_alloca(nCmdLen);//_alloca在栈上申请的，会自动释放
-	memset(szCmd, 0, nCmdLen);
-	strcpy_s(szCmd, nCmdLen, "\"");
-	strcat_s(szCmd, nCmdLen, szFile);
-	strcat_s(szCmd, nCmdLen, "\"");
-	if (szParam)
-	{
-		strcat_s(szCmd, nCmdLen, " ");
-		strcat_s(szCmd, nCmdLen, szParam);
 	}
 
 	//设置命令行进程启动信息(以隐藏方式启动命令并定位其输出到hWrite)
@@ -70,7 +59,7 @@ bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& e
 
 	//启动命令行
 	PROCESS_INFORMATION pi;
-	if (!CreateProcessA(NULL, (char *)szCmd, NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi))
+	if (!CreateProcessA((LPSTR)szFile, (LPSTR)szParam, NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi))
 	{
 		CloseHandle(hWrite);
 		CloseHandle(hRead);
@@ -85,8 +74,11 @@ bool Communal::Execute(const char* szFile, const char* szParam, unsigned long& e
 	bool bRet = true;
 
 	unsigned int uiThreadID = 0;
-	HANDLE hThreadRW = (HANDLE)_beginthreadex(NULL, 0, _Execute_readAndWrite, 
-		(void*)&(std::tuple<HANDLE, std::string*, HANDLE>(hRead, sPrintText, ev)), 0, &uiThreadID);
+	struct _Execute_readAndWrite_Struct ers;
+	ers.hRead = hRead;
+	ers.sPrintText = sPrintText;
+	ers.hEvent = ev;
+	HANDLE hThreadRW = (HANDLE)_beginthreadex(NULL, 0, _Execute_readAndWrite, (void*)&ers, 0, &uiThreadID);
 	
 	DWORD waitRet = 0;
 	if (timeout > 0)
@@ -636,5 +628,26 @@ void Communal::RemoveDir(const char* dirPath)
 	}
 
 	DelFloder(dirPath);
+}
+
+HMODULE Communal::GetSelfModuleHandle()
+{
+	MEMORY_BASIC_INFORMATION mbi;
+	return ((::VirtualQuery(GetSelfModuleHandle, &mbi, sizeof(mbi)) != 0)
+		? (HMODULE)mbi.AllocationBase : NULL);
+}
+
+std::string Communal::GetSelfPath()
+{
+	HMODULE hModule = GetSelfModuleHandle();
+	char selfPath[MAX_PATH];
+	::GetModuleFileNameA(hModule, selfPath, MAX_PATH);
+	return selfPath;
+}
+
+std::string Communal::GetSelfDir()
+{
+	std::string selfPath = GetSelfPath();
+	return selfPath.substr(0, selfPath.rfind("\\", std::string::npos));
 }
 

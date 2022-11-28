@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <wtypes.h>
 
 class Communal
 {
@@ -30,5 +31,8 @@ public:
 	static void RemoveDir(const char* dirPath);
 	static bool StringReplace(std::string& strBase, const std::string& strSrc, const std::string& strDes);
 	static std::string MakeGUID();
+	static HMODULE GetSelfModuleHandle();
+	static std::string GetSelfPath();
+	static std::string GetSelfDir();
 };
 
