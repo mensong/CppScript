@@ -4,6 +4,7 @@
 #include <io.h>
 #include <process.h>
 #include <direct.h>
+#include <mutex>
 
 struct _Execute_readAndWrite_Struct
 {
@@ -12,11 +13,12 @@ struct _Execute_readAndWrite_Struct
 	HANDLE hEvent;
 };
 
+std::mutex g_mutex_Execute_readAndWrite;
+
 unsigned __stdcall _Execute_readAndWrite(void* arg)
 {
 	struct _Execute_readAndWrite_Struct* tpParams = (struct _Execute_readAndWrite_Struct*)arg;
 	HANDLE hRead = tpParams->hRead;
-	std::string* sPrintText = tpParams->sPrintText;
 	HANDLE ev = tpParams->hEvent;
 
 	//读取命令行返回值
@@ -24,11 +26,13 @@ unsigned __stdcall _Execute_readAndWrite(void* arg)
 	DWORD dwRead = 0;
 	while (ReadFile(hRead, buff, 1024, &dwRead, NULL))
 	{
-		if (sPrintText)
+		g_mutex_Execute_readAndWrite.lock();
+		if (tpParams->sPrintText)
 		{
 			buff[dwRead] = '\0';
-			sPrintText->append(buff, dwRead);
+			tpParams->sPrintText->append(buff, dwRead);
 		}
+		g_mutex_Execute_readAndWrite.unlock();
 	}
 
 	SetEvent(ev);
@@ -85,6 +89,10 @@ bool Communal::Execute(const char* szFile, const char* szParam, int* exitCode/* 
 		waitRet = WaitForSingleObject(ev, timeout);
 	else
 		waitRet = WaitForSingleObject(ev, INFINITE);
+
+	g_mutex_Execute_readAndWrite.lock();
+	ers.sPrintText = NULL;
+	g_mutex_Execute_readAndWrite.unlock();
 
 	switch (waitRet)
 	{
