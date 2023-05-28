@@ -155,7 +155,7 @@ protected:
 	std::string _getMainID();//ID
 	std::string _getCurScriptId();//临时名，不带后缀：_getMainID() + '-' + m_compileCount
 	std::string _generateEnvironment();//创建头文件
-	std::vector<std::string> _generateCFile(const std::string& sCode);//创建源文件，返回不带cpp后缀名的列表
+	std::vector<std::string> _generateCFile(const std::string& sCode);//创建源文件，返回带cpp后缀名的列表
 	std::string _getSrcFileCmdLine(const std::vector<std::string>& vctNames);//获得源文件命令行
 	std::vector<std::string> _getObjFiles(const std::vector<std::string>& vctNames);
 	std::string _getObjFileCmdLine(const std::vector<std::string>& vctNames);//获得obj文件命令行

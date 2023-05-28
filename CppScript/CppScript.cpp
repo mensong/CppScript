@@ -111,7 +111,7 @@ bool CppScript::compile(const std::string& sScript, std::string* result /*= NULL
 	sOption += " ";
 	sOption += getTmpDefinitionCmdLine().c_str();
 
-	if (!Communal::Execute(m_CompilePath.c_str(), sOption.c_str(), &exitCode, &sResult))
+	if (Communal::Execute(m_CompilePath.c_str(), sOption.c_str(), &exitCode, &sResult) != 0)
 		return false;
 	if (result)
 		*result = sResult;
@@ -151,7 +151,7 @@ bool CppScript::compile(const std::vector<std::string>& sCppFiles, std::string* 
 	sOption += " ";
 	sOption += getTmpDefinitionCmdLine().c_str();
 
-	if (!Communal::Execute(m_CompilePath.c_str(), sOption.c_str(), &exitCode, &sResult))
+	if (Communal::Execute(m_CompilePath.c_str(), sOption.c_str(), &exitCode, &sResult) != 0)
 		return false;
 	if (result)
 		*result = sResult;
@@ -226,7 +226,7 @@ bool CppScript::link(std::string* result /*= NULL*/)
 	sOption += ' ';
 	sOption += getLibrariesCmdLine();
 	
-	if (!Communal::Execute(m_LinkPath.c_str(), sOption.c_str(), &exitCode, &sResult))
+	if (Communal::Execute(m_LinkPath.c_str(), sOption.c_str(), &exitCode, &sResult) != 0)
 		return false;
 	if (result)
 		*result = sResult;
@@ -513,7 +513,7 @@ std::string CppScript::_generateEnvironment()
 	return COMMON_H_FILE;
 }
 
-//不带后缀
+//带后缀
 std::vector<std::string> CppScript::_generateCFile(const std::string& sCode)
 {
 	std::string sTempFileName = _getCurScriptId();

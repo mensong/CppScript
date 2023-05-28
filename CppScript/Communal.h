@@ -6,7 +6,8 @@
 class Communal
 {
 public:
-	static bool Execute(const char* szFile, const char* szParam, int* exitCode = NULL, std::string* sPrintText = NULL, unsigned long timeout = 0);
+	static int Execute(const char* szFile, const char* szParam, int* exitCode = NULL, std::string* sPrintText = NULL, 
+		unsigned long timeout = 0, const char* szWorkDir = NULL);
 	static size_t WriteFile(const char * path, const char * writeContent, size_t & in_outLen, int start = -1,
 		bool bInsert = true, bool bDelTail = true);
 	static std::string ReadText(const char * path);

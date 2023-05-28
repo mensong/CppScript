@@ -40,42 +40,52 @@ unsigned __stdcall _Execute_readAndWrite(void* arg)
 	return 0;
 }
 
-bool Communal::Execute(const char* szFile, const char* szParam, int* exitCode/* = NULL*/, std::string* sPrintText/* = NULL*/, unsigned long timeout/* = 0*/)
+int Communal::Execute(const char* szFile, const char* szParam, int* exitCode/* = NULL*/, std::string* sPrintText/* = NULL*/,
+	unsigned long timeout/* = 0*/, const char* szWorkDir/* = NULL*/)
 {
+	int errCode = 0;
 	if ((!szFile || szFile[0] == '\0') && (!szParam || szParam[0] == '\0'))
-		return false;
+		return --errCode;
 
 	HANDLE hRead, hWrite;
 	//创建匿名管道
 	SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
 	if (!CreatePipe(&hRead, &hWrite, &sa, 0))
 	{
-		return false;
+		return --errCode;
 	}
 
 	//设置命令行进程启动信息(以隐藏方式启动命令并定位其输出到hWrite)
-	STARTUPINFOA si = { sizeof(STARTUPINFOA) };
+	STARTUPINFOA si;
+	ZeroMemory(&si, sizeof(STARTUPINFOA));
+	si.cb = sizeof(STARTUPINFOA);
 	GetStartupInfoA(&si);
 	si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
 	si.wShowWindow = SW_NORMAL;
 	si.hStdError = hWrite;
 	si.hStdOutput = hWrite;
 
+
+	std::string runScript;
+	if (szFile)
+		runScript = std::string("\"") + szFile + "\" ";
+	if (szParam)
+		runScript += szParam;
+
 	//启动命令行
 	PROCESS_INFORMATION pi;
-	if (!CreateProcessA((LPSTR)szFile, (LPSTR)szParam, NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi))
+	ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
+	if (!CreateProcessA(NULL, (LPSTR)runScript.c_str(), NULL, NULL, TRUE, NULL, NULL, szWorkDir, &si, &pi))
 	{
 		CloseHandle(hWrite);
 		CloseHandle(hRead);
-		return false;
+		return --errCode;
 	}
 
 	//立即关闭hWrite
 	CloseHandle(hWrite);
-	
-	HANDLE ev = CreateEventA(NULL, TRUE, FALSE, NULL);
 
-	bool bRet = true;
+	HANDLE ev = CreateEventA(NULL, TRUE, FALSE, NULL);
 
 	unsigned int uiThreadID = 0;
 	struct _Execute_readAndWrite_Struct ers;
@@ -83,7 +93,7 @@ bool Communal::Execute(const char* szFile, const char* szParam, int* exitCode/* 
 	ers.sPrintText = sPrintText;
 	ers.hEvent = ev;
 	HANDLE hThreadRW = (HANDLE)_beginthreadex(NULL, 0, _Execute_readAndWrite, (void*)&ers, 0, &uiThreadID);
-	
+
 	DWORD waitRet = 0;
 	if (timeout > 0)
 		waitRet = WaitForSingleObject(ev, timeout);
@@ -94,19 +104,17 @@ bool Communal::Execute(const char* szFile, const char* szParam, int* exitCode/* 
 	ers.sPrintText = NULL;
 	g_mutex_Execute_readAndWrite.unlock();
 
-	switch (waitRet)
+	if (waitRet == WAIT_OBJECT_0)
 	{
-	case WAIT_TIMEOUT:
-	case WAIT_FAILED:
-		TerminateThread(hThreadRW, 1);
-		TerminateProcess(pi.hProcess, 1);
-		bRet = false;
-		break;
-	case WAIT_OBJECT_0:
 		if (exitCode)
 			GetExitCodeProcess(pi.hProcess, (LPDWORD)exitCode);//获得返回值
-		bRet = true;
-		break;
+		errCode = 0;
+	}
+	else
+	{
+		TerminateThread(hThreadRW, 1);
+		TerminateProcess(pi.hProcess, 1);
+		errCode = waitRet;
 	}
 
 	CloseHandle(hRead);
@@ -114,7 +122,7 @@ bool Communal::Execute(const char* szFile, const char* szParam, int* exitCode/* 
 	CloseHandle(pi.hThread);
 	CloseHandle(ev);
 
-	return bRet;
+	return errCode;
 }
 
 size_t Communal::WriteFile(const char * path, const char * writeContent, size_t & in_outLen,
